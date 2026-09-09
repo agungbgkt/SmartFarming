@@ -12,8 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('_chicken__coop', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->uuid('id')->primary();
+            $table->string('name');
+            $table->string('location')->nullable();
+            $table->float('temperature_min');
+            $table->float('temperature_max');
+            $table->float('humidity_min');
+            $table->float('humidity_max');
+            $table->timestamps(); #bikin 2 kolom sekaligus created_at dan updated_at
         });
     }
 

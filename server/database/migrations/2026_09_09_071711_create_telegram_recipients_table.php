@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('telegram_recipients', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+            $table->string('telegram_chat_id')->unique(); #ID unik yang Telegram kasih ke tiap chat/user
+            $table->string('name'); #nama penerima
+            $table->boolean('is_active')->default(true); #untuk nonaktifkan penerima
             $table->timestamps();
         });
     }
