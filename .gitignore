@@ -1,0 +1,19 @@
+# Environment
+.env
+
+# Dependencies
+/server/vendor/
+/client/node_modules/
+
+# Build output
+/client/dist/
+/server/public/build/
+
+# Docker runtime data
+docker/mosquitto/data/
+docker/mosquitto/log/
+
+# OS/editor files
+.DS_Store
+.vscode/
+*.log

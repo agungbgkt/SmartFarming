@@ -1,0 +1,38 @@
+services: #untuk membuat daftar/bagian mesin" apa saja yang mau dinyalakan.
+  postgres: #service postgres dipakai buat manggil dia dari service lain.
+    image: postgres:16-alpine #image resmi PostgreSQL versi 16.
+    container_name: smartfarm_postgres #nama container biar gampang dikenali pas docker ps
+    restart: unless-stopped #laptop restart atau Docker crash, container ini otomatis nyala lagi.
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432" #format-nya port_laptop:port_container | port 5432 di laptop diteruskan ke port 5432 di dalam container.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data #supaya data database tidak hilang kalau container dimatikan/dihapus.
+    networks:
+      - smartfarm_network #biar service ini bisa "ngobrol" dengan service lain yang ada di network yang sama.
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: smartfarm_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883" #port standar MQTT (ini yang nanti dituju alat sensor buat kirim data)
+      - "9001:9001" #port websocket, opsional, berguna kalau mau tes MQTT dari browser
+    volumes:
+      - ./Docker/Mosquitto/config:/mosquitto/config #menghubungkan folder config lokal
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - smartfarm_network
+
+volumes:
+  postgres_data:
+  mosquitto_data:
+  mosquitto_log:
+networks:
+  smartfarm_network:
+    driver: bridge
+
