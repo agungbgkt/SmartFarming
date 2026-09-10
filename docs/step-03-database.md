@@ -60,3 +60,26 @@ php artisan migrate:fresh
 ```
 
 ## Hasil akhir
+Semua 9 migration berhasil (`php artisan migrate:status` semuanya `Ran`,
+tidak ada yang loncat/gagal). Sempat ada error foreign key sebelumnya
+karena nama tabel yang direferensikan tidak konsisten dengan nama tabel
+yang benar-benar dibuat — solusinya `migrate:fresh` setelah semua nama
+diseragamkan.
+
+## Model Eloquent
+
+Satu Model dibuat untuk tiap tabel, supaya query data bisa pakai kode PHP
+(`ChickenCoop::create([...])`) tanpa nulis SQL manual.
+
+| Model | Tabel | Catatan |
+|---|---|---|
+| `User` | `users` | id auto-increment biasa (bukan UUID, beda dari yang lain) |
+| `ChickenCoop` | `_chicken__coop` | pakai `protected $table` manual karena nama tabel tidak ikut konvensi; `hasMany` ke devices/monitorings/alerts |
+| `Device` | `devices` | `belongsTo` ChickenCoop; `last_seen_at` di-cast ke `datetime` |
+| `Monitoring` | `monitorings` | `belongsTo` ChickenCoop; `recorded_at` di-cast ke `datetime` |
+| `Alert` | `alerts` | `belongsTo` ChickenCoop; `is_sent` di-cast ke `boolean` |
+| `TelegramRecipient` | `telegram_recipients` | berdiri sendiri, tidak ada relationship |
+
+Semua Model (kecuali `User`) pakai UUID sebagai primary key, sehingga
+butuh 2 baris tambahan: `protected $keyType = 'string';` dan
+`public $incrementing = false;`.
