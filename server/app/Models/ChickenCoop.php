@@ -8,7 +8,7 @@ class ChickenCoop extends Model
 {
     protected $table = "_chicken__coop"; #inisiasi dari table _chicken__coop.
     protected $keyType = 'string'; #karena id pakai UUID (string acak). Tanpa 2 baris ini, Laravel defaultnya ngira id angka yang auto-increment
-    public $incrementing = false; #karena id pakai UUID (string acak).
+    public $incrementing = false; #karena id pakai UUID (string acak) dan id nggak otomatis nambah sendiri.
 
     protected $fillable = [ #daftar putih kolom yang boleh diisi lewat ChickenCoop::create([...]).
         'name',
