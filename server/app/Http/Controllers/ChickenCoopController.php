@@ -37,7 +37,7 @@ class ChickenCoopController extends Controller
             'humidity_max' => 'required|numeric|gt:humidity_min',
         ]);
 
-        $coop = ChickenCoop::with([
+        $coop = ChickenCoop::create([
             'id' => (string) Str::uuid(), #karena id nggak auto-generate (UUID manual), kita generate dulu.
             ...$validated, #(disebut spread operator) itu cara ringkas buat "sebar semua isi array $validated" ke dalam array baru ini, tanpa nulis satu-satu.
         ]);

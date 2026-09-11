@@ -11,6 +11,7 @@ class ChickenCoop extends Model
     public $incrementing = false; #karena id pakai UUID (string acak) dan id nggak otomatis nambah sendiri.
 
     protected $fillable = [ #daftar putih kolom yang boleh diisi lewat ChickenCoop::create([...]).
+        'id',
         'name',
         'location',
         'temperature_min',
