@@ -13,7 +13,7 @@ class Device extends Model
 
     protected $fillable = [
         '_chicken__coop_id',
-        'device_kode',
+        'device_code',
         'last_seen_at',
     ];
 
