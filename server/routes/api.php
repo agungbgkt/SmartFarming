@@ -32,11 +32,10 @@ Route::middleware('auth:sanctum')->group(function(){
 
 #CRUD ADMIN & USER VIEW Device
 Route::middleware('auth:sanctum')->group(function(){
-    Route::get('/device', [DeviceController::class, 'index']);
-    Route::get('/device/{id}', [DeviceController::class, 'show']);
+    Route::get('/coop/{coopId}/devices', [DeviceController::class, 'index']);
 
     Route::middleware('admin')->group(function(){
-        Route::post('/device', [DeviceController::class, 'store']);
+        Route::post('/devices', [DeviceController::class, 'store']);
         Route::put('/device/{id}', [DeviceController::class, 'update']);
         Route::delete('/device/{id}', [DeviceController::class, 'destroy']);
     });

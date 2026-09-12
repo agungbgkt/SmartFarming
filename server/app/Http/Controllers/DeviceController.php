@@ -5,33 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\Device;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use PhpParser\Node\Scalar\String_;
 
 class DeviceController extends Controller
 {
-    #GET api/device -- bisa diakses admin & viewer
-    public function index(){
+    #GET api/coop/{coopId}/devices -- bisa diakses admin & viewer
+    public function index(String $coopId){
         return response()->json(
-            Device::get()
+            Device::where('_chicken__coop_id', $coopId)->get() #ambil semua devices yang ada di kandang($coopId)
         );
     }
 
-    #GET api/device/{id}
-    public function show(String $id){
-        $device = Device::with('ChickenCoop:id,name,location')->find($id);
-
-        if (! $device){
-            return response()->json(['message' => 'Perangkat tidak ditemukan.'], 404);
-        }
-
-        return response()->json($device);
-    }
-
-    #POST api/device -- hanya admin
+    #POST api/devices -- hanya admin
     public function store(Request $request){
         $validated = $request->validate([
-            '_chicken_coop_id' => 'required|exists:__chicken_coop_id',
+            '_chicken_coop_id' => 'required|uuid|exists:__chicken_coop_id', #uuid mastiin formatnya emang UUID valid (bukan asal teks) | exists:_chicken__coop,id mastiin id itu beneran ada di tabel _chicken__coop.
             'device_code' => 'required|string|max:255|unique:devices,device_code',
-            'last_seen_at' => 'nullable:date',
         ]);
 
         $device = Device::create([
@@ -40,25 +29,6 @@ class DeviceController extends Controller
         ]);
 
         return response()->json($device, 201);
-    }
-
-    #PUT api/device/{id} -- hanya admin
-    public function update(Request $request, String $id){
-        $device = Device::find($id);
-
-        if (! $device){
-            return response()->json(['message' => 'Perangkat tidak ditemukan.'], 404);
-        }
-
-        $validated = $request->validate([
-            '_chicken_coop_id' => 'required|exists:__chicken_coop_id',
-            'device_code' => 'required|string|max:255|unique:devices,device_code',
-            'last_seen_at' => 'nullable:date',
-        ]);
-
-        $device->update($validated);
-
-        return response()->json($device);
     }
 
     #DELETE api/device/{id}
