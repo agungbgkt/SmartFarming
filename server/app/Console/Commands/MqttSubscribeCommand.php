@@ -37,23 +37,23 @@ class MqttSubscribeCommand extends Command
             return;
         }
 
-        $device = Device::where('device_code', $deviceCode)->first();
+        $device = Device::where('device_code', $deviceCode)->first(); #Cari device di database berdasarkan device_code yang didapat dari topic tadi.
 
         if (! $device){
             $this->warm("Device tidak dikenal: {$deviceCode}");
             return;
         }
 
-        Monitoring::create([
+        Monitoring::create([ #nyimpen 1 baris data baru ke tabel monitorings.
             'id' => (string) Str::uuid(),
-            '_chicken__coop_id' => $device->_chicken__coop_id,
+            '_chicken__coop_id' => $device->_chicken__coop_id, #"nyambungin" lewat data $device yang ambil dari database barusan (device tau dia dipasang di kandang mana lewat relationship.
             'temperature' => $data['temperature'],
             'humidity' => $data['humidity'],
-            'recorded_at' => now(),
+            'recorded_at' => now(), #dicatat sebagai "sekarang", yaitu waktu data ini beneran diterima server.
         ]);
 
-        $device->update(['last_seen_at' => now()]);
+        $device->update(['last_seen_at' => now()]); #update "kapan terakhir device ini ngirim data",nanti dipakai buat deteksi device offline.
 
-        $this->info("Data tersimpan: {$deviceCode} -> {$data['temperature']}°C, {$data['humidity']}%");
+        $this->info("Data tersimpan: {$deviceCode} -> {$data['temperature']}°C, {$data['humidity']}%"); #lihat langsung di terminal tiap ada data masuk.
     }
 }
