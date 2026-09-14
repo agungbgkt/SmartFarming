@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChickenCoopController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\MonitoringController;
+use App\Models\Monitoring;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -40,3 +42,6 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::delete('/device/{id}', [DeviceController::class, 'destroy']);
     });
 });
+
+#MONITORING DATA
+Route::get('/coop/{coopId}/monitorings', [MonitoringController::class, 'index']);
