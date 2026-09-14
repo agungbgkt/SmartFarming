@@ -2,11 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ChickenCoop;
 use Illuminate\Console\Command;
 use App\Models\Monitoring;
 use App\Models\Device;
 use Illuminate\Support\Str;
 use PhpMqtt\Client\Facades\MQTT;
+use App\Models\TelegramRecipient;
+use App\Models\Alert;
+use App\Services\TelegramService;
 
 class MqttSubscribeCommand extends Command
 {
@@ -55,5 +59,46 @@ class MqttSubscribeCommand extends Command
         $device->update(['last_seen_at' => now()]); #update "kapan terakhir device ini ngirim data",nanti dipakai buat deteksi device offline.
 
         $this->info("Data tersimpan: {$deviceCode} -> {$data['temperature']}°C, {$data['humidity']}%"); #lihat langsung di terminal tiap ada data masuk.
+
+        $this->checkTreshold($device->_chicken__coop_id, $data['temperature'], $data['humidity']);
+    }
+
+    protected function checkTreshold(string $coopId, float $temperature, float $humidity): void{
+        $coop = ChickenCoop::find($coopId);
+
+        if (! $coop){
+            return;
+        }
+
+        $alerts = [];
+
+        if ($temperature > $coop->temperature_max){
+            $alerts[] = ['type' => 'high_temperature', 'message' => "Suhu {$coop->name} mencapai {$temperature}°C, melebihi batas {$coop->temperature_max}°C."];
+        } elseif ($temperature < $coop->temperature_min){
+            $alerts[] = ['type' => 'low_temperature', 'message' => "Suhu {$coop->name} turun ke {$temperature}°C, dibawah batas {$coop->temperature_min}°C."];
+        }
+
+        if ($humidity > $coop->humidity_max){
+            $alerts[] = ['type' => 'high_humidity', 'message' => "Kelembapan  {$coop->name} mencapai {$humidity}%, melebihi batas {$coop->humidity_max}%."];
+        } elseif ($humidity < $coop->humidity_min){
+            $alerts[] = ['type' => 'low_humidity', 'message' => "Kelembapan  {$coop->name} turun ke {$humidity}%, dibawah batas {$coop->humidity_min}%."];
+        }
+
+        foreach ($alerts as $alertData){
+            $alert = Alert::create([
+                '_chicken__coop_id' => $coopId,
+                'type' => $alertData['type'],
+                'message' => $alertData['message'],
+            ]);
+
+            $sent = (new TelegramService())->sendAlert($alertData['message']);
+
+            $alert->update([
+                'is_sent' => $sent,
+                'sent_at' => $sent ? now() : null,
+            ]);
+
+            $this->info($sent ? "Alert terkirim: {$alertData['type']}" : "Alert gagal kirim: {$alertData['type']}");
+        }
     }
 }
