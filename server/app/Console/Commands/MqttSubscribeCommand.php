@@ -8,7 +8,6 @@ use App\Models\Monitoring;
 use App\Models\Device;
 use Illuminate\Support\Str;
 use PhpMqtt\Client\Facades\MQTT;
-use App\Models\TelegramRecipient;
 use App\Models\Alert;
 use App\Services\TelegramService;
 
@@ -22,6 +21,9 @@ class MqttSubscribeCommand extends Command
         $this->info('Mendengarkan topic kandang/+/data ...'); #buat kasih tau "sistem lagi jalan".
         
         $mqtt->subscribe('kandang/+/data', function(string $topic, string $message){ #dengerin semua topic yang polanya kandang/APAPUN/data, dan setiap kali ada pesan masuk, jalankan function di dalam kurung ini.
+            $this->info("MQTT MASUK!");
+            $this->info("Topic: {$topic}");
+            $this->info("Message: {$message}");
             $this->processMessage($topic, $message);
         }, 0); #Angka 0 ini QoS (Quality of Service), artinya "kirim sekali, nggak ada jaminan sampai" (paling ringan/cepat).
 
@@ -36,7 +38,7 @@ class MqttSubscribeCommand extends Command
 
         $data = json_decode($message, true); #nerjemahin jadi array PHP asli.
 
-        if (! $deviceCode || $data || ! isset($data['temperature'], $data['humidity'])){ #"gerbang keamanan" | cek 3 hal sekaligus: device code ketemu, data berhasil di-decode, dan ada field temperature dan humidity di dalamnya.
+        if (! $deviceCode ||! $data || ! isset($data['temperature'], $data['humidity'])){ #"gerbang keamanan" | cek 3 hal sekaligus: device code ketemu, data berhasil di-decode, dan ada field temperature dan humidity di dalamnya.
             $this->warn("Payload tidak valid dari topic: {$topic}");
             return;
         }
@@ -44,7 +46,7 @@ class MqttSubscribeCommand extends Command
         $device = Device::where('device_code', $deviceCode)->first(); #Cari device di database berdasarkan device_code yang didapat dari topic tadi.
 
         if (! $device){
-            $this->warm("Device tidak dikenal: {$deviceCode}");
+            $this->warn("Device tidak dikenal: {$deviceCode}");
             return;
         }
 

@@ -6,7 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChickenCoopController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\MonitoringController;
-use App\Models\Monitoring;
+use App\Http\Controllers\AlertController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -45,3 +45,6 @@ Route::middleware('auth:sanctum')->group(function(){
 
 #MONITORING DATA
 Route::get('/coop/{coopId}/monitorings', [MonitoringController::class, 'index']);
+
+#ALERT
+Route::get('/alerts', [AlertController::class, 'index']);
