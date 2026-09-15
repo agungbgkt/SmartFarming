@@ -11,6 +11,8 @@ use PhpMqtt\Client\Facades\MQTT;
 use App\Models\Alert;
 use App\Services\TelegramService;
 use Illuminate\Support\Carbon;
+use App\Events\AlertCreated;
+use App\Events\MonitoringUpdated;
 
 class MqttSubscribeCommand extends Command
 {
@@ -53,13 +55,16 @@ class MqttSubscribeCommand extends Command
 
         $recordedAt = now();
         
-        Monitoring::create([ #nyimpen 1 baris data baru ke tabel monitorings.
-            'id' => (string) Str::uuid(),
-            '_chicken__coop_id' => $device->_chicken__coop_id, #"nyambungin" lewat data $device yang ambil dari database barusan (device tau dia dipasang di kandang mana lewat relationship.
-            'temperature' => $data['temperature'],
-            'humidity' => $data['humidity'],
-            'recorded_at' => $recordedAt, #dicatat sebagai "sekarang", yaitu waktu data ini beneran diterima server.
+        $monitoring = Monitoring::create([ #nyimpen 1 baris data baru ke tabel monitorings.
+                        'id' => (string) Str::uuid(),
+                        '_chicken__coop_id' => $device->_chicken__coop_id, #"nyambungin" lewat data $device yang ambil dari database barusan (device tau dia dipasang di kandang mana lewat relationship.
+                        'temperature' => $data['temperature'],
+                        'humidity' => $data['humidity'],
+                        'recorded_at' => $recordedAt, #dicatat sebagai "sekarang", yaitu waktu data ini beneran diterima server.
         ]);
+
+
+        event(new MonitoringUpdated($monitoring)); #cara "menyalakan" Event di Laravel: bungkus data yang relevan ($monitoring) ke dalam Event, lalu panggil helper event().
 
         $device->update(['last_seen_at' => now()]); #update "kapan terakhir device ini ngirim data",nanti dipakai buat deteksi device offline.
 
@@ -109,6 +114,8 @@ class MqttSubscribeCommand extends Command
                 'is_sent' => $sent,
                 'sent_at' => $sent ? now() : null,
             ]);
+
+            event(new AlertCreated($alert));
 
             $this->info($sent ? "Alert terkirim: {$alertData['type']}" : "Alert gagal kirim: {$alertData['type']}");
         }
