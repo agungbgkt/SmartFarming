@@ -19,7 +19,7 @@ class DeviceController extends Controller
     #POST api/devices -- hanya admin
     public function store(Request $request){
         $validated = $request->validate([
-            '_chicken_coop_id' => 'required|uuid|exists:__chicken_coop_id', #uuid mastiin formatnya emang UUID valid (bukan asal teks) | exists:_chicken__coop,id mastiin id itu beneran ada di tabel _chicken__coop.
+            '_chicken__coop_id' => 'required|uuid|exists:_chicken__coop,id', #uuid mastiin formatnya emang UUID valid (bukan asal teks) | exists:_chicken__coop,id mastiin id itu beneran ada di tabel _chicken__coop.
             'device_code' => 'required|string|max:255|unique:devices,device_code',
         ]);
 

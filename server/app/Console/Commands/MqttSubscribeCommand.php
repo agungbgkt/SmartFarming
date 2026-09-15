@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use PhpMqtt\Client\Facades\MQTT;
 use App\Models\Alert;
 use App\Services\TelegramService;
+use Illuminate\Support\Carbon;
 
 class MqttSubscribeCommand extends Command
 {
@@ -50,22 +51,24 @@ class MqttSubscribeCommand extends Command
             return;
         }
 
+        $recordedAt = now();
+        
         Monitoring::create([ #nyimpen 1 baris data baru ke tabel monitorings.
             'id' => (string) Str::uuid(),
             '_chicken__coop_id' => $device->_chicken__coop_id, #"nyambungin" lewat data $device yang ambil dari database barusan (device tau dia dipasang di kandang mana lewat relationship.
             'temperature' => $data['temperature'],
             'humidity' => $data['humidity'],
-            'recorded_at' => now(), #dicatat sebagai "sekarang", yaitu waktu data ini beneran diterima server.
+            'recorded_at' => $recordedAt, #dicatat sebagai "sekarang", yaitu waktu data ini beneran diterima server.
         ]);
 
         $device->update(['last_seen_at' => now()]); #update "kapan terakhir device ini ngirim data",nanti dipakai buat deteksi device offline.
 
         $this->info("Data tersimpan: {$deviceCode} -> {$data['temperature']}°C, {$data['humidity']}%"); #lihat langsung di terminal tiap ada data masuk.
 
-        $this->checkTreshold($device->_chicken__coop_id, $data['temperature'], $data['humidity']);
+        $this->checkTreshold($device->_chicken__coop_id, $data['temperature'], $data['humidity'], $recordedAt);
     }
 
-    protected function checkTreshold(string $coopId, float $temperature, float $humidity): void{
+    protected function checkTreshold(string $coopId, float $temperature, float $humidity, Carbon $recordedAt): void{
         $coop = ChickenCoop::find($coopId);
 
         if (! $coop){
@@ -84,6 +87,13 @@ class MqttSubscribeCommand extends Command
             $alerts[] = ['type' => 'high_humidity', 'message' => "Kelembapan  {$coop->name} mencapai {$humidity}%, melebihi batas {$coop->humidity_max}%."];
         } elseif ($humidity < $coop->humidity_min){
             $alerts[] = ['type' => 'low_humidity', 'message' => "Kelembapan  {$coop->name} turun ke {$humidity}%, dibawah batas {$coop->humidity_min}%."];
+        }
+
+        if (empty($alerts) && in_array($recordedAt->minute, [0,1,2])){
+            $alerts[] = [
+                'type' => 'normal',
+                'message' => "Suhu & Kelembapan {$coop->name} Normal. Suhu {$temperature}°C, Kelembapan {$humidity}%.",
+            ];
         }
 
         foreach ($alerts as $alertData){
