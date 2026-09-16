@@ -25,7 +25,7 @@ class MonitoringUpdated implements ShouldBroadcast #ini "penanda" yang bikin Lar
     public function broadcastOn(): array
     {
         return [
-            new Channel("Kandang.{$this->monitoring->_chicken_coop_id}"), #nentuin "saluran radio" mana yang dipakai buat siaran ini.
+            new Channel("kandang.{$this->monitoring->_chicken__coop_id}"), #nentuin "saluran radio" mana yang dipakai buat siaran ini.
         ];
     }
 

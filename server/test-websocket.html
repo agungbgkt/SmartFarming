@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Test WebSocket Reverb</title>
+</head>
+<body>
+  <h2>Test WebSocket - Buka Console (F12) untuk lihat hasil</h2>
+  <p>Status: <span id="status">Menghubungkan...</span></p>
+  <ul id="log"></ul>
+
+  <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+  <script>
+    // ===== GANTI 3 NILAI INI SESUAI .env KAMU =====
+    const REVERB_APP_KEY = "zgmd9eqheue2tovzvmfo";
+    const REVERB_HOST = "127.0.0.1";
+    const REVERB_PORT = 8080;
+    // GANTI juga dengan salah satu id kandang yang beneran ada
+    const KANDANG_ID = "06846b9d-0e19-4095-a523-0b37d2d61ecf";
+    // ================================================
+
+    const pusher = new Pusher(REVERB_APP_KEY, {
+      wsHost: REVERB_HOST,
+      wsPort: REVERB_PORT,
+      forceTLS: false,
+      enabledTransports: ['ws'],
+      cluster: '',
+    });
+
+    pusher.connection.bind('connected', () => {
+      document.getElementById('status').innerText = 'TERHUBUNG ke Reverb!';
+      console.log('%cTERHUBUNG ke Reverb!', 'color: green; font-weight: bold;');
+    });
+
+    pusher.connection.bind('error', (err) => {
+      document.getElementById('status').innerText = 'GAGAL connect';
+      console.error('Connection error:', err);
+    });
+
+    const channel = pusher.subscribe(`kandang.${KANDANG_ID}`);
+
+    channel.bind('monitoring.updated', (data) => {
+      console.log('%cEVENT MASUK: monitoring.updated', 'color: blue; font-weight: bold;', data);
+      logToPage('monitoring.updated: ' + JSON.stringify(data));
+    });
+
+    channel.bind('alert.created', (data) => {
+      console.log('%cEVENT MASUK: alert.created', 'color: red; font-weight: bold;', data);
+      logToPage('alert.created: ' + JSON.stringify(data));
+    });
+
+    function logToPage(text) {
+      const li = document.createElement('li');
+      li.innerText = new Date().toLocaleTimeString() + ' - ' + text;
+      document.getElementById('log').prepend(li);
+    }
+  </script>
+</body>
+</html>

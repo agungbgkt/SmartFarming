@@ -23,7 +23,7 @@ class AlertCreated implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [ #satu buat yang lagi liat detail kandang tertentu, satu lagi (alerts.global) buat halaman "Log alert global" yang mau denger semua alert dari kandang mana pun.
-            new Channel("Kandang.{$this->alert->_chicken__coop_id}"),
+            new Channel("kandang.{$this->alert->_chicken__coop_id}"),
             new Channel('alerts.global'),
         ];
     }
