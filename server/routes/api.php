@@ -7,6 +7,7 @@ use App\Http\Controllers\ChickenCoopController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\TelegramRecipientController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -48,3 +49,5 @@ Route::get('/coop/{coopId}/monitorings', [MonitoringController::class, 'index'])
 
 #ALERT
 Route::get('/alerts', [AlertController::class, 'index']);
+
+#CRUD USER & PENERIMA TELEGRAM OLEH ADMIN
