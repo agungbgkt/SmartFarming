@@ -8,6 +8,7 @@ use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\TelegramRecipientController;
+use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -51,3 +52,12 @@ Route::get('/coop/{coopId}/monitorings', [MonitoringController::class, 'index'])
 Route::get('/alerts', [AlertController::class, 'index']);
 
 #CRUD USER & PENERIMA TELEGRAM OLEH ADMIN
+Route::middleware(['auth:sanctum', 'admin'])->group(function(){
+    Route::get('/users', UserController::class, 'index');
+    Route::put('/users/{id}/role', UserController::class, 'updateRole');
+
+    Route::get('/telegram-recipients', TelegramRecipientController::class, 'index');
+    Route::post('/telegram-recipients', TelegramRecipientController::class, 'store');
+    Route::put('/telegram-recipients/{id}', TelegramRecipientController::class, 'update');
+    Route::delete('/telegram-recipients/{id}', TelegramRecipientController::class, 'destroy');
+});
