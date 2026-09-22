@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../services/auth';
+import { login, register } from '../services/auth';
 import { User, KeyRound, Phone, Eye, EyeOff, Mail } from 'lucide-react';
 import { FaFacebookF } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
@@ -12,6 +12,14 @@ export default function Login(){
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false); // false = password tersembunyi, true = password terlihat.
     const [isSignUp, setIsSignUp] = useState(false); // false = login, true = sign up
+    
+    // state terpisah biar saat ngetik di satu form ngga "bocor" ke form satunya.
+    const [signUpName, setSignUpName] = useState('');
+    const [signUpEmail, setSignUpEmail] = useState('');
+    const [signUpPassword, setSignUpPassword] = useState('');
+    const [signUpError, setSignUpError] = useState('');
+    const [signUpLoading, setSignUpLoading] = useState('');
+
     const navigate = useNavigate();
 
     async function handleSubmit(e) {
@@ -28,6 +36,23 @@ export default function Login(){
             setError('Email atau password salah.')
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function handleSignUp(e){
+        e.preventDefault()
+        setSignUpError('');
+        setSignUpLoading(true);
+
+        try{
+            const data = await register(signUpName, signUpEmail, signUpPassword);
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            navigate('dashboard');
+        } catch (err){
+            setSignUpError('Gagal mendaftar. Perika kembali data yang dimasukkan.');
+        } finally {
+            setSignUpLoading(false);
         }
     }
 
@@ -74,7 +99,7 @@ export default function Login(){
                         <div className="relative">
                             <KeyRound size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input 
-                                type={showPassword ? "text" : "password"} 
+                                type={showPassword ? "text" : "password"} // nge-switch type jadi "text" pas showPassword true.
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -82,7 +107,7 @@ export default function Login(){
                                 required
                             />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">
-                                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                                {showPassword ? <Eye size={17} /> : <EyeOff size={17} />}
                             </button>
                         </div>
                         {/* Lupa Password */}
@@ -100,7 +125,7 @@ export default function Login(){
                     </form>
                 </div>
 
-                {/* Form Sign Up */}
+                {/* Sign Up */}
                 <div className={`absolute left-0 top-0 w-1/2 h-full flex flex-col items-center justify-center px-12 transition-opacity duration-500 ${isSignUp ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
                     <h1 className="text-xl font-bold text-teal-600 mb-8">Buat akun baru</h1>
                     {/* Social Login */}
@@ -119,13 +144,16 @@ export default function Login(){
                         </button>
                     </div>
                     {/* Sign Up Form */}
-                    <form onSubmit={(e) => e.preventDefault()} className="w-[325px] space-y-3">
+                    <form onSubmit={handleSignUp} className="w-[325px] space-y-3">
+                        {signUpError && (<p className="text-red-500 text-sm">{signUpError}</p>)}
                         {/* Nama */}
                         <div className="relative">
                             <User size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></User>
                             <input 
                                 type="text"
                                 placeholder="Name"
+                                value={signUpName}
+                                onChange={(e) => setSignUpName(e.target.value)}
                                 className="w-full bg-gray-100 border-0 rounded-lg pl-10 pr-4 py-3 focus:ring-teal-500"
                                 required 
                             />
@@ -136,6 +164,8 @@ export default function Login(){
                             <input 
                                 type="email"
                                 placeholder="Email"
+                                value={signUpEmail}
+                                onChange={(e) => setSignUpEmail(e.target.value)}
                                 className="w-full bg-gray-100 border-0 rounded-lg pl-10 pr-4 py-3 focus:ring-teal-500"
                                 required 
                             />
@@ -146,17 +176,17 @@ export default function Login(){
                             <input 
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                value={signUpPassword}
+                                onChange={(e) => setSignUpPassword(e.target.value)}
                                 className="w-full bg-gray-100 border-0 rounded-lg pl-10 pr-4 py-3 focus:ring-teal-500" 
                                 required
                             />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">
-                                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                                {showPassword ? <Eye size={17} /> : <EyeOff size={17} />}
                             </button>
                         </div>
                         <div className="flex justify-center pt-2">
-                            <button type="button" disabled={loading} className="border-2 border-teal-500 bg-teal-500 px-8 py-2 rounded-full font-semibold hover:bg-teal-600 hover:border-teal-600 text-white transition disabled:opacity-50 cursor-pointer">DAFTAR</button>
+                            <button type="submit" disabled={signUpLoading} className="border-2 border-teal-500 bg-teal-500 px-8 py-2 rounded-full font-semibold hover:bg-teal-600 hover:border-teal-600 text-white transition disabled:opacity-50 cursor-pointer">{signUpLoading ? "Memproses..." : "DAFTAR"}</button>
                         </div>
                     </form>
                 </div>
