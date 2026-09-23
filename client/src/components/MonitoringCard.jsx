@@ -8,7 +8,7 @@ const RANGE_OPTIONS = [
     { value: '30days', label: '1 bulan terakhir'},
 ];
 
-export default function MonitoringChart({ coopId, coopName }){
+export default function MonitoringChart({ coopId, coopName }){ // pakai props — komponen ini nggak nyari data kandang sendiri, tapi nerima dari komponen induk
     const [data, setData] = useState([]);
     const [range, setRange] = useState('today');
     const [loading, setLoading] = useState(true);

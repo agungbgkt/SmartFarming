@@ -2,15 +2,24 @@ import { useState, useEffect } from 'react';
 import { getCoopList } from '../services/coop';
 import  Sidebar  from '../components/Sidebar';
 import { Bell } from 'lucide-react';
-
+import { getMonitoring } from '../services/monitoring';
 import MonitoringChart from '../components/monitoringCard';
+import MonitoringSummary from '../components/MonitoringSummary';
 
 export default function Dashboard(){
     const [coopList, setCoopList] = useState([]);
+    const [monitoringData, setMonitoringData] = useState([]); // state tambahan supaya dashboard tidak melakukan banyak request. cukup 1 kali request ke monitoring data bisa digunakan untuk 2 component
 
     useEffect(() => {
         getCoopList().then(setCoopList); // cara React "menjalankan sesuatu" setelah komponen pertama kali muncul di layar.
     }, []); // Array kosong [] di akhir artinya "cuma jalankan sekali.
+
+    useEffect(() => {
+        if (!coopList[0]?.id) return;
+
+        getMonitoring(coopList[0].id, 'today')
+            .then(setMonitoringData);
+    }, [coopList]);
 
     const user = JSON.parse(localStorage.getItem('user') || '{}'); // ambil data user yang disimpan waktu login, || '{}' jaga-jaga kalau somehow kosong (biar nggak error pas di-parse).
     
@@ -46,15 +55,12 @@ export default function Dashboard(){
                     {/* Card Grafik - Placeholder dulu */}
                     <MonitoringChart 
                         coopId={coopList[0]?.id}
-                        coopName={coopList[0]?.name}/>
+                        coopName={coopList[0]?.name}
+                        data={monitoringData}/> {/* tambahan */}
                     
 
                     {/* 3 Card sejajar - Placeholder */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-white rounded-xl p-4 shadow">Perangkat Terhubung</div>
-                        <div className="bg-white rounded-xl p-4 shadow">Suhu Kandang</div>
-                        <div className="bg-white rounded-xl p-4 shadow">Kelembapan Kandang</div>
-                    </div>
+                    <MonitoringSummary />
 
                     {/* 2 Card Bawah */}
                     <div className="grid grid-cols-2 gap-4">
