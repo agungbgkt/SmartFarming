@@ -10,7 +10,7 @@ const api = axios.create({ // bikin 1 "instance" axios dengan pengaturan default
 api.interceptors.request.use((config) => { // jalan sebelum tiap request dikirim. Isinya: ambil token yang tersimpan di localStorage, kalau ada, otomatis tempelin ke header Authorization.
     const token = localStorage.getItem('token');
     if (token) {
-        config.headers.Authorization = 'Bearer ${token}';
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });

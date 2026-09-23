@@ -6,9 +6,9 @@ import { Menu, X, LayoutGrid, Smartphone, History, Bell, Settings } from 'lucide
 const menuItems = [
     { key: 'dashboard', path:"/dashboard", icon: LayoutGrid },
     { key: 'device', path:"/device", icon: Smartphone },
-    { key: 'history', icon: History },
-    { key: 'notifications', icon: Bell },
-    { key: 'settings', icon: Settings },
+    { key: 'history', path: "/history", icon: History },
+    { key: 'notifications', path: "/notifications", icon: Bell },
+    { key: 'settings', path: "/settings", icon: Settings },
 ];
 
 export default function Sidebar(){

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { getCoopList } from '../services/coop';
 import  Sidebar  from '../components/Sidebar';
 import { Bell } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+import MonitoringChart from '../components/monitoringCard';
 
 export default function Dashboard(){
     const [coopList, setCoopList] = useState([]);
@@ -17,6 +18,7 @@ export default function Dashboard(){
         <div className="min-h-screen bg-gray-200 flex">
             {/* Sidebar */}
             <Sidebar />
+
             <div className="flex-1">
                 {/* Topbar */}
                 <header className="bg-white flex justify-between items-center px-6 py-3">
@@ -42,15 +44,10 @@ export default function Dashboard(){
                 <main className="p-6 space-y-4 ml-25 mr-25">
                     <h1 className="text-3xl font-bold">Dashboard</h1>
                     {/* Card Grafik - Placeholder dulu */}
-                    <div className="bg-white rounded-xl p-4 shadow">
-                        <p className="font-semibold">Grafik Suhu & Kelembapan</p> 
-                        <p className="text-sm text-gray-400">
-                            {coopList[0]?.name ?? "Memuat..."} 
-                        </p>  {/* kandangList[0]?.name ?? 'Memuat...' — ?. itu optional chaining, artinya "kalau kandangList[0] masih undefined (data API belum kebalas), jangan error, langsung anggap hasilnya undefined".*/}
-                        <div className="h-64 flex items-center justify-center text-gray-300">
-                            (grafik akan ditambahkan di step berikutnya)
-                        </div>
-                    </div>
+                    <MonitoringChart 
+                        coopId={coopList[0]?.id}
+                        coopName={coopList[0]?.name}/>
+                    
 
                     {/* 3 Card sejajar - Placeholder */}
                     <div className="grid grid-cols-3 gap-4">
