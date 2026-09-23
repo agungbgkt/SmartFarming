@@ -2,13 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-import { login } from './services/auth';
-
-function Dashboard(){
-  return (
-    <h1 className="p-8 text-2xl">Dashboard (Sementara)</h1>
-  );
-}
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
