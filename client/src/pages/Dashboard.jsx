@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getCoopList } from '../services/coop';
 import  Sidebar  from '../components/Sidebar';
 import { Bell } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard(){
     const [coopList, setCoopList] = useState([]);
