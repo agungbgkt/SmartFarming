@@ -5,6 +5,8 @@ import { Bell } from 'lucide-react';
 import { getMonitoring } from '../services/monitoring';
 import MonitoringChart from '../components/monitoringCard';
 import MonitoringSummary from '../components/MonitoringSummary';
+import AlertList from '../components/AlertList';
+import GreenhouseData from '../components/GreenhouseData';
 
 export default function Dashboard(){
     const [coopList, setCoopList] = useState([]);
@@ -62,8 +64,8 @@ export default function Dashboard(){
 
                     {/* 2 Card Bawah */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white rounded-xl p-4 shadow">Notifikasi Saat Ini</div>
-                        <div className="bg-white rounded-xl p-4 shadow">Data Greenhouse</div>
+                        <AlertList />
+                        <GreenhouseData />
                     </div>
                 </main>
             </div>
