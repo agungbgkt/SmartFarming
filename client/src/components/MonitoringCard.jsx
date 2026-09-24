@@ -13,12 +13,12 @@ export default function MonitoringChart({ coopId, coopName }){ // pakai props �
     const [range, setRange] = useState('today');
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!coopId) return;
+    useEffect(() => { // 2 dependency: kandangId dan range. Artinya useEffect ini bakal jalan ulang setiap kali salah satu dari dua nilai itu berubah — pas user ganti dropdown filter, atau pas geser ke kandang lain (nanti), data otomatis di-fetch ulang sesuai pilihan terbaru.
+        if (!coopId) return; // jaga-jaga, waktu Dashboard pertama kali render, kandangId mungkin masih undefined.
         setLoading(true);
         getMonitoring(coopId, range)
             .then((result) => {
-                const formatted = result.map((item) => ({
+                const formatted = result.map((item) => ({ // data mentah dari API isinya recorded_at. Recharts butuh label sumbu-X yang pendek dan gampang dibaca. jam, hasil new Date(...).toLocaleTimeString(...) yang format-in ke jam:menit. {...item, jam: ...} itu spread — salin semua properti lama, tambah satu properti baru.
                     ...item,
                     jam: new Date(item.recorded_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit'}),
                 }));
@@ -51,12 +51,12 @@ export default function MonitoringChart({ coopId, coopName }){ // pakai props �
                     <LineChart data={data}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="jam" fontSize={12} />
-                        <YAxis yAxisId="left" fontSize={12}/>
+                        <YAxis yAxisId="left" fontSize={12}/> {/* bikin grafik punya 2 sumbu-Y berbeda */}
                         <YAxis yAxisId="right" orientation="right" fontSize={12}/>
                         <Tooltip />
                         <Legend />
                         <Line yAxisId="left" type="monotone" dataKey="temperature" name="Suhu (°C)" stroke="#f59e0b" dot={false}/>
-                        <Line yAxisId="right" type="monotone" dataKey="humidity" name="Kelembapan (%)" stroke="#3b82f6" dot={false}/>
+                        <Line yAxisId="right" type="monotone" dataKey="humidity" name="Kelembapan (%)" stroke="#3b82f6" dot={false}/> {/* dot={false} — matiin titik bundar di tiap data point pada garis, biar grafiknya lebih bersih */}
                     </LineChart>
                 </ResponsiveContainer>
             )}

@@ -1,8 +1,31 @@
-export default function MonitoringSummary({data = []}){
-    const latestData = data.length > 0
-        ? data[data.length - 1]
-        : null
+import { useState, useEffect } from "react";
+import { getMonitoring } from "../services/monitoring";
 
+export default function MonitoringSummary({coopList = []}){
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [latestData, setLatestData] = useState(null);
+
+    const activeCoop = coopList[activeIndex];
+
+    // Rotasi otomatis
+    useEffect(() => { // satu ngurus kapan pindah index (jalan sekali, setInterval-nya nggak perlu dibuat ulang tiap ganti kandang),
+        if (coopList.length <= 1) return; // 1 kandang aja, nggak perlu rotasi.
+
+        const interval = setInterval(() => { // beda dari setTimeout (jalan sekali abis delay), setInterval berulang terus tiap 12 detik, cocok buat "gantian terus-menerus" (bukan cuma sekali ganti).
+            setActiveIndex((prev) => (prev + 1) % coopList.length); // setActiveIndex((prev) => (prev + 1) % coopList.length) — (prev + 1) % panjang_array itu trik umum buat bikin angka muter balik ke 0 begitu udah sampai ujung. | (prev) => prev + 1 ngambil nilai terbaru tiap kali dipanggil, bukan nilai "beku" dari awal.
+        }, 12000);
+
+        return () => clearInterval(interval);
+    }, [coopList.length]);
+
+    // Ambil data terbaru tiap kali kandang aktif berubah.
+    useEffect(() => { // ngurus fetch data (jalan ulang tiap activeCoop.id berubah).
+        if (!activeCoop?.id) return;
+
+        getMonitoring(activeCoop.id, 'today').then((result) => {
+            setLatestData(result.length > 0 ? result[result.length - 1] : null);
+        });
+    }, [activeCoop?.id]);
     return(
         <div className="grid grid-cols-3 gap-4">
             {/* Perangkat Terhubung */}
@@ -11,13 +34,13 @@ export default function MonitoringSummary({data = []}){
                     Perangkat Terhubung
                 </p>
                 <p className="text-2xl font-bold text-center mt-2">
-                    1
+                    {activeCoop?.devices?.length ?? '-'}
                 </p>
             </div>
             {/* Suhu */}
             <div className="bg-white rounded-xl p-4 shadow">
                 <p className="text-sm text-gray-400">
-                    Suhu Kandang
+                    Suhu {activeCoop?.name ?? ''}
                 </p>
                 <p className="text-2xl font-bold text-center mt-2">
                     {latestData ? `${latestData.temperature} °C` : "-"}
@@ -26,7 +49,7 @@ export default function MonitoringSummary({data = []}){
             {/* Kelembapan */}
             <div className="bg-white rounded-xl p-4 shadow">
                 <p className="text-sm text-gray-400">
-                    Kelembapan Kandang
+                    Kelembapan {activeCoop?.name ?? ''}
                 </p>
                 <p className="text-2xl font-bold text-center mt-2">
                     {latestData ? `${latestData.humidity} %` : "-"}

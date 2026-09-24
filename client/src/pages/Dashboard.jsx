@@ -56,11 +56,9 @@ export default function Dashboard(){
                     <MonitoringChart 
                         coopId={coopList[0]?.id}
                         coopName={coopList[0]?.name}
-                        data={monitoringData}/> {/* tambahan */}
-                    
-
+                    />
                     {/* 3 Card sejajar - Placeholder */}
-                    <MonitoringSummary />
+                    <MonitoringSummary coopList={coopList}/>
 
                     {/* 2 Card Bawah */}
                     <div className="grid grid-cols-2 gap-4">
