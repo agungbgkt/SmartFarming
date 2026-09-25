@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function(){
 #CRUD ADMIN & USER VIEW Device
 Route::middleware('auth:sanctum')->group(function(){
     Route::get('/coop/{coopId}/devices', [DeviceController::class, 'index']);
+    Route::get('/devices', [DeviceController::class, 'indexAll']);
 
     Route::middleware('admin')->group(function(){
         Route::post('/devices', [DeviceController::class, 'store']);

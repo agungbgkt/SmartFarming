@@ -44,7 +44,7 @@ export default function Sidebar(){
                 className="fixed top-2 left-4 z-50 text-gray-600 bg-transparent rounded-lg p-2 shadow cursor-pointer">
                 {visible ? <X size={30} /> : <Menu size={30} />}
             </button>
-            <aside className={`fixed top-0 left-0 h-full w-16 bg-transparent flex flex-col items-center mt-25 gap-6 transition-transform duration-300 z-40 ${visible ? "translate-x-0" : "-translate-x-full"}`}>
+            <aside className={`fixed top-0 left-0 h-full w-26 bg-transparent flex flex-col items-center mt-25 gap-6 transition-transform duration-300 z-40 ${visible ? "translate-x-0" : "-translate-x-full"}`}>
                 {menuItems.map(({ key, path, icon: Icon}) => (
                     <div 
                         key={key}

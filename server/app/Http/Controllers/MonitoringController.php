@@ -20,7 +20,7 @@ class MonitoringController extends Controller
 
         $data = Monitoring::where('_chicken__coop_id', $coopId) #ambil semua monitoring yang ada di kandang.
             ->where('recorded_at', '>=', $startDate)
-            ->whereRaw('EXTRACT(MINUTE FROM recorded_at) IN (0, 2)') #Dibaca dari dalam ke luar: fungsi bawaan PostgreSQL, artinya "dari kolom recorded_at, ambil cuma bagian menitnya doang.
+            // ->whereRaw('EXTRACT(MINUTE FROM recorded_at) IN (0, 2)') #Dibaca dari dalam ke luar: fungsi bawaan PostgreSQL, artinya "dari kolom recorded_at, ambil cuma bagian menitnya doang.
             ->orderBy('recorded_at') #data diurutkan dari yang paling lama ke paling baru.
             ->get(['temperature', 'humidity', 'recorded_at']); #cuma ambil 3 kolom ini aja.
 

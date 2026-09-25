@@ -14,7 +14,7 @@ export default function AlertList(){
             <p className="font-semibold">Notifikasi Saat Ini</p>
 
             {alerts.length === 0 ? (
-                <p className="text-sm text-gray-400">Belum ada notifikasi.</p>
+                <p className="text-sm text-gray-400 text-center p-8">Belum ada notifikasi.</p>
             ) : (
                 <div className="space-y-2">
                     {alerts.length.map((alert) => (

@@ -43,9 +43,9 @@ export default function MonitoringChart({ coopId, coopName }){ // pakai props â€
             </div>
 
             {loading ? (
-                <div className="h-64 flex items-center justify-center text-gray-300">Memuat data...</div>
+                <div className="w-full h-64 flex items-center justify-center text-gray-300">Memuat data...</div>
             ) : data.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-gray-300">Belum ada data.</div>
+                <div className="w-full h-64 flex items-center justify-center text-gray-300">Belum ada data.</div>
             ) : (
                 <ResponsiveContainer width="100%" height={260}>
                     <LineChart data={data}>

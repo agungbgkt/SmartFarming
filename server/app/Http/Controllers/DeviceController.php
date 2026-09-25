@@ -6,11 +6,12 @@ use App\Models\Device;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use PhpParser\Node\Scalar\String_;
+use App\Models\Monitoring;
 
 class DeviceController extends Controller
 {
     #GET api/coop/{coopId}/devices -- bisa diakses admin & viewer
-    public function index(String $coopId){
+    public function index(String $coopId){ // didesain buat "device di 1 kandang tertentu" (dipanggil dari halaman detail kandang).
         return response()->json(
             Device::where('_chicken__coop_id', $coopId)->get() #ambil semua devices yang ada di kandang($coopId)
         );
@@ -42,5 +43,27 @@ class DeviceController extends Controller
         $device->delete();
 
         return response()->json(['message' => 'Perangkat berhasil dihapus.']);
+    }
+
+    #GET api/devices
+    public function indexAll(){ // semua device, lintas kandang.
+        $devices = Device::with('chickenCoop')->get()->map(function ($device){ // mengubah tiap objek Device mentah jadi array baru yang formatnya udah "siap pakai" buat frontend (gabungan data device + nama kandang + status + reading terbaru).
+            $latest = Monitoring::where('_chicken__coop_id', $device->_chicken_coop_id)
+                ->orderByDesc('recorded_at') // ngambil suhu/kelembapan terbaru.
+                ->first();
+
+            return [
+                'id' => $device->id,
+                'device_code' => $device->device_code,
+                'coop_name' => $device->ChickenCoop->name,
+                'is_online' => $device->last_seen_at && $device->last_seen_at->gt(now(20)), // logic status online/offline,Device dianggap online kalau last_seen_at-nya kurang dari 20 menit yang lalu, Kalau last_seen_at masih null otomatis dianggap offline.
+                'last_seen_at' => $device->last_seen_at,
+                'temperature' => $latest->temperature ?? null,
+                'humidity' => $latest->humidity ?? null,
+                'recorded_at' => $latest->recorded_at ?? null,
+            ];
+        });
+
+        return response()->json($devices);
     }
 }
