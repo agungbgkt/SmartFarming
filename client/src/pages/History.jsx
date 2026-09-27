@@ -33,7 +33,25 @@ export default function History(){
                 </header>
                 
                 <main className="p-6 space-y-4 ml-25 mr-25">
-                    <h1 className="text-3xl font-bold">Riwayat</h1>
+                    <h1 className="text-3xl font-bold">Riwayat Data</h1>
+
+                    <div className="bg-white w-full h-260 rounded-xl shadow-xl">
+                        <div className="bg-white ml-5 py-4">
+                            <p className="font-semibold">Monitoring riwayat data</p>
+                            <p className="text-sm text-gray-400">Melihat dan menganalisisa riwayat data dari sensor</p>
+                        </div>
+                        <div className="grid grid-cols-6 gap-4">
+                            <div className="bg-white border border-black ml-5 py-7 rounded-xl p-4 shadow">
+                                <p className="text-xl font-semibold text-gray-400">Perangkat</p>
+                            </div>
+                            <div className="bg-white border border-black ml-5 py-7 rounded-xl p-4 shadow">
+                                <p className="text-xl font-semibold text-gray-400">Tanggal</p>
+                            </div>
+                        </div>
+                        <div className="w-300 border border-black rounded-xl grid grid-cols-4 gap-4 py-2 mt-5 ml-55 items-center justify-center">
+                            
+                        </div>
+                    </div>
                 </main>
             </div>
         </div>

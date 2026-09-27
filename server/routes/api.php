@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function(){
 
 #MONITORING DATA
 Route::get('/coop/{coopId}/monitorings', [MonitoringController::class, 'index']);
+Route::get('/coop/{coopId}/monitorings/stats', [MonitoringController::class, 'stats']);
 
 #ALERT
 Route::get('/alerts', [AlertController::class, 'index']);
