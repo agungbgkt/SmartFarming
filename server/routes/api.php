@@ -47,11 +47,14 @@ Route::middleware('auth:sanctum')->group(function(){
 });
 
 #MONITORING DATA
-Route::get('/coop/{coopId}/monitorings', [MonitoringController::class, 'index']);
-Route::get('/coop/{coopId}/monitorings/stats', [MonitoringController::class, 'stats']);
+Route::middleware('auth:sanctum')->group(function(){
+    Route::get('/coop/{coopId}/monitorings', [MonitoringController::class, 'index']);
+    Route::get('/coop/{coopId}/monitorings/stats', [MonitoringController::class, 'stats']);
 
-#ALERT
-Route::get('/alerts', [AlertController::class, 'index']);
+    #ALERT
+    Route::get('/alerts', [AlertController::class, 'index']);
+    Route::get('/alerts/stats', [AlertController::class, 'stats']);
+});
 
 #CRUD USER & PENERIMA TELEGRAM OLEH ADMIN
 Route::middleware(['auth:sanctum', 'admin'])->group(function(){

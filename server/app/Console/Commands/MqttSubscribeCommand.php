@@ -106,6 +106,8 @@ class MqttSubscribeCommand extends Command
                 '_chicken__coop_id' => $coopId,
                 'type' => $alertData['type'],
                 'message' => $alertData['message'],
+                'temperature' => $temperature,
+                'humidity' => $humidity,
             ]);
 
             $sent = (new TelegramService())->sendAlert($alertData['message']);

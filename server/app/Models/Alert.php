@@ -17,6 +17,8 @@ class Alert extends Model
         '_chicken__coop_id',
         'type',
         'message',
+        'temperature',
+        'humidity',
         'is_sent',
         'send_at',
     ];
