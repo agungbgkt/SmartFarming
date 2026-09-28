@@ -1,9 +1,19 @@
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, ChevronDown } from 'lucide-react';
+import { getAlerts } from "../services/alert";
 
 export default function Notifications(){
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const [alerts, setAlerts] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Filter
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [conditionFilter, setConditionFilter] = useState("all");
+    const [deviceFilter, setDeviceFilter] = useState("all");
+    const [dayFilter, setDayFilter] = useState("today");
     
     return (
         <div className="min-h-screen bg-gray-200 flex">

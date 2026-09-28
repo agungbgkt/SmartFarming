@@ -5,7 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { getAllDevices } from "../services/device";
 import { getMonitoringStats, getMonitoringByDate } from "../services/monitoring";
 
-function todayISO(){
+function todayISO(){ // bikin default tanggal (format YYYY-MM-DD.
     return new Date().toISOString().split('T')[0];
 }
 
@@ -25,19 +25,19 @@ export default function History(){
         });
     }, []);
 
-    const selectedDevice = devices.find((d) => d.id === selectedDeviceId);
+    const selectedDevice = devices.find((d) => d.id === selectedDeviceId); // dari dropdown, user milih device, tapi endpoint monitoring butuh kandang_id. Baris ini "nerjemahin" device yang dipilih jadi kandang terkaitnya (selectedDevice.kandang_id).
 
     useEffect(() => {
-        if(!selectedDevice?.coop_id) return;
+        if(!selectedDevice?._chicken__coop_id) return;
 
-        getMonitoringStats(selectedDevice.coop_id, date).then(setStats);
-        getMonitoringByDate(selectedDevice.coop_id, date).then((result) => {
+        getMonitoringStats(selectedDevice._chicken__coop_id, date).then(setStats);
+        getMonitoringByDate(selectedDevice._chicken__coop_id, date).then((result) => {
             setChartData(result.map((item) => ({
                 ...item,
                 jam: new Date(item.recorded_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
             })));
         });
-    }, [selectedDevice?.coop_id, date]);
+    }, [selectedDevice?._chicken__coop_id, date]);
 
     return (
         <div className="min-h-screen bg-gray-200 flex">
@@ -112,7 +112,7 @@ export default function History(){
                                 <div className="h-64 flex items-center justify-center text-gray-300">Belum ada data.</div>
                             ) : (
                                 <ResponsiveContainer width="100%" height={260}>
-                                    <LineChart data={data}>
+                                    <LineChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="jam" fontSize={12} />
                                         <YAxis yAxisId="left" fontSize={12}/> {/* bikin grafik punya 2 sumbu-Y berbeda */}

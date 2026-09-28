@@ -5,8 +5,9 @@ export async function getMonitoring(coopId, range = 'today') {
     return response.data;
 }
 
+// tambahan setelah, function stats di MonitoringController ditambahkan
 export async function getMonitoringByDate(coopId, date) {
-    const response = await api.get(`/coop/${coopId}/monitorings/date?=${date}`);
+    const response = await api.get(`/coop/${coopId}/monitorings?date=${date}`);
     return response.data;
 }
 
