@@ -34,7 +34,7 @@ export default function Sidebar(){
 
     function handleMenuClick(path){
         navigate(path); // avigate(path) dipanggil di handleMenuClick, plus startHideTimer() — supaya abis pindah halaman, timer auto-hide tetap jalan normal (reset dari 0), bukan malah keganggu.
-        setHideTimer();
+        // setHideTimer();
     }
 
     return (

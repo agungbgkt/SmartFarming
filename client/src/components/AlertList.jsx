@@ -6,7 +6,7 @@ export default function AlertList(){
     const [alerts, setAlerts] = useState([]);
 
     useEffect(() => {
-        getAlerts(5).then(setAlerts);
+        getAlerts({ limit: 5 }).then(setAlerts);
     }, []);
 
     return (
@@ -17,7 +17,7 @@ export default function AlertList(){
                 <p className="text-sm text-gray-400 text-center p-8">Belum ada notifikasi.</p>
             ) : (
                 <div className="space-y-2">
-                    {alerts.length.map((alert) => (
+                    {alerts.map((alert) => (
                         <div key={alert.id} className="border rounded-lg p-3 flex gap-3 items-start">
                             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                                 <Send size={14} className="text-blue-500"/>
