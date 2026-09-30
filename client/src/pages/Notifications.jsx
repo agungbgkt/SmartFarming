@@ -33,7 +33,7 @@ export default function Notifications(){
         getAlerts({
             status: statusFilter,
             condition: conditionFilter,
-            coopId: coopFilter,
+            coop_id: coopFilter,
             range: rangeFilter,
             limit: 50,
         }).then(setAlerts);
@@ -131,8 +131,9 @@ export default function Notifications(){
                                         return (
                                             <tr key={alert.id} className="border-b last:border-0">
                                                 <td className="py-2">{new Date(alert.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit'})}</td>
-                                                <td>{alert.chicken_coop?.name}</td> {/* alert.chicken_coop?.name, bukan alert.chickenCoop?.name. Ini bagian yang gampang salah tapi penting: nama function relationship di Laravel (chickenCoop(), camelCase) berubah jadi snake_case (chicken_coop) begitu dikonversi ke JSON. Laravel melakukan ini otomatis untuk semua relasi yang di-load lewat with(...). */}
+                                                {/* alert.chicken_coop?.name, bukan alert.chickenCoop?.name. Ini bagian yang gampang salah tapi penting: nama function relationship di Laravel (chickenCoop(), camelCase) berubah jadi snake_case (chicken_coop) begitu dikonversi ke JSON. Laravel melakukan ini otomatis untuk semua relasi yang di-load lewat with(...). */}
                                                 <td>{alert.type === 'normal' ? 'Laporan' : 'Peringatan'}</td>
+                                                <td>{alert.chicken_coop?.name}</td> 
                                                 <td>{alert.temperature ? `${alert.temperature}°C` : '-'}</td>
                                                 <td>{alert.humidity ? `${alert.humidity}%` : '-'}</td>
                                                 <td className={condition.className}>{condition.text}</td>

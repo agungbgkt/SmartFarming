@@ -11,8 +11,8 @@ class AlertController extends Controller
     public function index(Request $request){
         $query = Alert::with('ChickenCoop')->latest('created_at'); #latest('created_at') menggantikan latest('sent_at'). Di PostgreSQL, urutan DESC menaruh nilai null paling atas. Alert yang gagal terkirim punya sent_at = null, jadi selalu nyangkut di posisi teratas.
 
-        if ($request->filled('coopId')){ #filled() menggantikan has(). Dropdown "Semua" nanti mengirim string kosong (coopId=).
-            $query->where('_chicken_coop_id', $request->query('coopId'));
+        if ($request->filled('coop_id')){ #filled() menggantikan has(). Dropdown "Semua" nanti mengirim string kosong (coopId=).
+            $query->where('_chicken__coop_id', $request->query('coop_id'));
         }
 
         if ($request->query('status') === 'success'){
