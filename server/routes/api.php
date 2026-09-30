@@ -7,6 +7,7 @@ use App\Http\Controllers\ChickenCoopController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\TelegramRecipientController;
 use App\Http\Controllers\UserController;
 
@@ -65,4 +66,10 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function(){
     Route::post('/telegram-recipients', [TelegramRecipientController::class, 'store']);
     Route::put('/telegram-recipients/{id}', [TelegramRecipientController::class, 'update']);
     Route::delete('/telegram-recipients/{id}', [TelegramRecipientController::class, 'destroy']);
+});
+
+#SETTING FOR ADMIN
+Route::middleware(['auth:sanctum', 'admin'])->group(function(){
+    Route::get('/settings/system', [SystemSettingController::class, 'show']);
+    Route::get('/settings/system', [SystemSettingController::class, 'update']);
 });
