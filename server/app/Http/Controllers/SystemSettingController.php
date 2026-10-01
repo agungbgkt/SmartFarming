@@ -9,8 +9,15 @@ use Illuminate\Http\Request;
 class SystemSettingController extends Controller
 {
     public function Show(){
-        $settings = SystemSetting::first() ?? SystemSetting::create([]);
+        $settings = SystemSetting::first(); // ?? SystemSetting::create([]);
 
+        if (!$settings){
+            $settings = SystemSetting::create([
+                'timezone' => 'Asia/Jakarta',
+                'report_interval_minutes' => 60,
+                'monitoring_mode' => true,
+            ]);
+        }
         return response()->json([
             'timezone' => $settings->timezone,
             'report_interval_minutes' => $settings->report_interval_minutes,
@@ -26,8 +33,13 @@ class SystemSettingController extends Controller
             'monitoring_mode' => 'required|boolean',
         ]);
 
-        $settings = SystemSetting::first() ?? SystemSetting::create([]);
-        $settings->update($validated);
+        $settings = SystemSetting::first(); // ?? SystemSetting::create([]);
+        
+        if (!$settings){
+            $settings = SystemSetting::create($validated);
+        } else {
+            $settings->update($validated);
+        }
 
         return response()->json($settings);
     }

@@ -71,5 +71,5 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function(){
 #SETTING FOR ADMIN
 Route::middleware(['auth:sanctum', 'admin'])->group(function(){
     Route::get('/settings/system', [SystemSettingController::class, 'show']);
-    Route::get('/settings/system', [SystemSettingController::class, 'update']);
+    Route::put('/settings/system', [SystemSettingController::class, 'update']);
 });

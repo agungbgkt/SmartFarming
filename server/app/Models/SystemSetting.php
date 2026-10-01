@@ -21,7 +21,7 @@ class SystemSetting extends Model
     ];
 
     protected static function boot(){
-        parent::bot();
+        parent::boot();
 
         static::creating(function ($model){
             if (empty($model->id)){
