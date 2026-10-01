@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TelegramRecipient;
+use App\Services\TelegramService;
 
 class TelegramRecipientController extends Controller
 {
@@ -53,5 +54,12 @@ class TelegramRecipientController extends Controller
         $recipient->delete();
 
         return response()->json(['message' => 'Berhasil menghapus penerima']);
+    }
+
+    #ENDPOINT kirim pesan uji coba
+    public function test(Request $request){
+        $sent = (new TelegramService())->sendAlert('Ini pesan uji dari SupermamaFarm. Jika kamu menerima ini notifikasi Telegram berjalan dengan baik.');
+
+        return response()->json(['sent' => $sent]);
     }
 }

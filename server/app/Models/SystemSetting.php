@@ -13,11 +13,19 @@ class SystemSetting extends Model
     protected $fillable = [
         'timezone',
         'report_interval_minutes',
-        'monitoring_mode'
+        'monitoring_mode',
+        'notify_report',
+        'notify_temperature',
+        'notify_humidity',
+        'notify_offline',
     ];
 
     protected $casts = [
-        'monitoring_mode' => 'boolean'
+        'monitoring_mode' => 'boolean',
+        'notify_report' => 'boolean',
+        'notify_temperature' => 'boolean',
+        'notify_humidity' => 'boolean',
+        'notify_offline' => 'boolean',
     ];
 
     protected static function boot(){

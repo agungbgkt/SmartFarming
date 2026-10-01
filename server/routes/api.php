@@ -66,6 +66,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function(){
     Route::post('/telegram-recipients', [TelegramRecipientController::class, 'store']);
     Route::put('/telegram-recipients/{id}', [TelegramRecipientController::class, 'update']);
     Route::delete('/telegram-recipients/{id}', [TelegramRecipientController::class, 'destroy']);
+    Route::post('/telegram-recipients/test', [TelegramRecipientController::class, 'test']);
 });
 
 #SETTING FOR ADMIN
