@@ -30,7 +30,7 @@ class SystemSettingController extends Controller
             'notify_offline' => $settings->notify_offline,
             'last_monitoring_at' => Monitoring::max('recorded_at'),
             'telegram_chat_id' => $recipient?->telegram_chat_id,
-            'telegram_recipient_id' => $recipient->id,
+            'telegram_recipient_id' => $recipient?->id,
         ]);
     }
 

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import Sidebar from "../components/Sidebar";
-import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone} from 'lucide-react';
+import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone, Send, Info} from 'lucide-react';
 import { getSystemSettings, updateSystemSettings } from '../services/settings';
 import { getCoopList, updateCoop } from '../services/coop';
 import { getAllDevices } from '../services/device';
+import { updateTelegramRecipient,sendTestNotification } from '../services/settings';
 
 export default function Settings(){
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -109,7 +110,7 @@ export default function Settings(){
                         isOpen={openSection === 'notifikasi'}
                         onToggle={() => toggleSection('notifikasi')}
                     >
-                        <p className="text-sm text-gray-400">Segera Hadir</p>
+                        {settings && <NotificationForm settings={settings} onSaved={setSettings} />}
                     </AccordionItem>
 
                     <AccordionItem 
@@ -299,6 +300,99 @@ function SensorForm(){
                     {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
                 </button>
             </div>
+        </div>
+    );
+}
+
+function NotificationForm({ settings, onSaved }){
+    const [form, setForm] = useState({
+        notify_report: settings.notify_report,
+        notify_temperature: settings.notify_temperature,
+        notify_humidity: settings.notify_humidity,
+        notify_offline: settings.notify_offline,
+    });
+    const [chatId, setChatId] = useState(settings.telegram_chat_id ?? '');
+    const [editingChatId, setEditingChatId] = useState(false);
+    const [testStatus, setTestStatus] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    function toggle(key){
+        setForm({...form, [key]: !form[key]});
+    }
+
+    async function handleSave() {
+        setSaving(true);
+        try {
+            if (editingChatId && settings.telegram_recipient_id){
+                await updateTelegramRecipient(settings.telegram_recipient_id, { telegram_chat_id: chatId});
+                setEditingChatId(false);
+            }
+            const updated = await updateSystemSettings({...settings, ...form});
+            onSaved({...settings, ...updated, telegram_chat_id: chatId});
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleTest() {
+        setTestStatus('Mengirim...');
+        const result = await sendTestNotification();
+        setTestStatus(result.sent ? 'Pesan uji berhasil dikirim.' : 'Gagal mengirim, cek token bot/chat ID.');
+    }
+
+    return (
+        <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-4">
+                <p className="font-semibold text-sm">Jenis Notifikasi</p>
+                <ToggleRow label="Laporan monitoring berkala" desc="Mengirim laporan kondisi setiap interval waktu." checked={form.notify_report} onChange={() => toggle('notify_report')} />
+                <ToggleRow label="Peringatan Suhu" desc="Notifikasi jika suhu keluar dari batas normal." checked={form.notify_temperature} onChange={() => toggle('notify_temperature')} />
+                <ToggleRow label="Peringatan Kelembapan" desc="Notifikasi jika kelembapan keluar dari batas normal." checked={form.notify_humidity} onChange={() => toggle('notify_humidity')} />
+                <ToggleRow label="Perangkat Offline" desc="Notifikasi jika perangkat tidak mengirim data." checked={form.notify_offline} onChange={() => toggle('notify_offline')} />
+            </div>
+
+            <div className="space-y-4">
+                <p className="font-semibold text-sm">Akun Telegram Terhubung</p>
+                <div className="border border-teal-200 bg-teal-50 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Info size={16} className="text-teal-500" />
+                        {editingChatId ? (
+                            <input value={chatId} onChange={(e) => setChatId(e.target.value)} className="border rounded px-2 py-1 text-sm" />
+                        ) : (
+                            <span className="text-sm">Chat ID: {chatId || 'belum diatur'}</span>
+                        )}
+                    </div>
+                    <button onClick={() => setEditingChatId(!editingChatId)} className="text-teal-600 text-sm border border-teal-300 rounded-lg px-3 py-1 cursor-pointer">
+                        {editingChatId ? 'Batal' : 'Ubah'}
+                    </button>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                    <p className="font-semibold text-sm flex items-center gap-2"><Send size={16} />Test Notifikasi</p>
+                    <p className="text-xs text-gray-400 mt-1 mb-3">Kirim pesan uji coba untuk memastikan notifikasi berjalan dengan baik.</p>
+                    <button onClick={handleTest} className="border border-teal-500 text-teal-600 rounded-lg px-4 py-1.5 text-sm cursor-pointer">Kirim Pesan Uji</button>
+                    {testStatus && <p className="text-xs text-gray-500 mt-2">{testStatus}</p>}
+                </div>
+            </div>
+
+            <div className="col-span-2 flex justify-end">
+                <button onClick={handleSave} disabled={saving} className="bg-teal-500 text-white px-4 py-2 rounded-lg disabled:opacity-50 cursor-pointer">
+                    {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function ToggleRow({ label, desc, checked, onChange }){
+    return(
+        <div className="flex items-center justify-between">
+            <div>
+                <p className="text-sm font-medium">{label}</p>
+                <p className="text-xs text-gray-400">{desc}</p>
+            </div>
+            <button onClick={onChange} className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${checked ? 'bg-teal-500' : 'bg-gray-300'}`}>
+                <span className={`block w-5 h-5 bg-white rounded-full absolute top-0.5 transtition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`}></span>
+            </button>
         </div>
     );
 }
