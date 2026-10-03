@@ -49,6 +49,10 @@ class AuthController extends Controller
     }
 
     $token = $user->createToken('auth_token')->plainTextToken; #dari Sanctum, generate token unik buat user ini, yang nanti disimpan React dan dipakai di setiap request berikutnya.
+    $user->update([
+        'last_login_at' => now(),
+        'last_login_device' => $request->userAgent(), //$request->userAgent() — Laravel otomatis membaca header User-Agent yang dikirim browser.
+    ]);
 
     return response()->json([
         'user'  => $user,
@@ -61,5 +65,17 @@ class AuthController extends Controller
     $request->user()->currentAccessToken()->delete(); #$request->user() ambil data user yang lagi login sekarang, berdasarkan token yang dia kirim. currentAccessToken() ini spesifik ngambil token yang sedang dipakai untuk request ini aja (bukan semua token milik user itu).
 
     return response()->json(['message' => 'Berhasil logout.']);
+   }
+
+   #ENDPOINT UPDATE PROFIL
+   public function updateProfile(Request $request){
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email,' . $request->user()->id,
+    ]);
+
+    $request->user()->update($validated);
+
+    return response()->json($request->user());
    }
 }

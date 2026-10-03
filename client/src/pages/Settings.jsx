@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
 import Sidebar from "../components/Sidebar";
-import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone, Send, Info} from 'lucide-react';
+import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone, Send, Info, Pencil, Trash2, Plus} from 'lucide-react';
 import { getSystemSettings, updateSystemSettings } from '../services/settings';
 import { getCoopList, updateCoop } from '../services/coop';
-import { getAllDevices } from '../services/device';
+import { getAllDevices, createDevice, updateDevice, deleteDevice } from '../services/device';
 import { updateTelegramRecipient,sendTestNotification } from '../services/settings';
 
 export default function Settings(){
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
 
     const [settings, setSettings] = useState(null);
     const [devices, setDevices] = useState([]);
     const [openSection, setOpenSection] = useState('sistem');
+    const [coopList, setCoopList] = useState([]); // baris baru
 
     useEffect(() => {
         getSystemSettings().then(setSettings);
         getAllDevices().then(setDevices);
+        getCoopList().then(setCoopList); // baris baru
     }, []);
 
     const onlineCount = devices.filter((d) => d.is_online).length;
@@ -120,7 +122,7 @@ export default function Settings(){
                         isOpen={openSection === 'integrasi'}
                         onToggle={() => toggleSection('integrasi')}
                     >
-                        <p className="text-sm text-gray-400">Segera Hadir</p>
+                        <IntegrationForm coopList={coopList} />
                     </AccordionItem>
 
                     <AccordionItem 
@@ -130,7 +132,7 @@ export default function Settings(){
                         isOpen={openSection === 'akun'}
                         onToggle={() => toggleSection('akun')}
                     >
-                        <p className="text-sm text-gray-400">Segera Hadir</p>
+                        <AccountForm user={user} onSaved={setUser} />
                     </AccordionItem>
                 </main>
             </div>
@@ -395,4 +397,203 @@ function ToggleRow({ label, desc, checked, onChange }){
             </button>
         </div>
     );
+}
+
+function IntegrationForm({ coopList }){
+    const [devices, setDevices] = useState([]);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingDevice, setEditingDevice] = useState(null);
+
+    function loadDevice(){
+        getAllDevices().then(setDevices);
+    }
+
+    useEffect(() => {
+        loadDevice();
+    }, []);
+
+    function openAddModal(){
+        setEditingDevice(null);
+        setModalOpen(true);
+    }
+
+    async function handleDelete(id) {
+        if (!confirm('Hapus perangkat ini?')) return;
+        await deleteDevice(id);
+        loadDevice();
+    }
+
+    async function handleSubmit(formData) {
+        if (editingDevice){
+            await updateDevice(editingDevice.id, formData);
+        } else {
+            await createDevice(formData);
+        }
+        setModalOpen(false);
+        loadDevice();
+    }
+
+    return(
+        <div>
+            <div className="flex justify-between items-center mb-3">
+                <p className="font-semibold">Daftar Perangkat</p>
+                <button onClick={openAddModal} className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 cursor-pointer">
+                    <Plus size={16} />Tambah Perangkat
+                </button>
+            </div>
+
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="text-left text-gray-400 border-b">
+                        <th className="py-2">Perangkat</th>
+                        <th>Jenis</th>
+                        <th>Lokasi</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {devices.map((d) => (
+                        <tr key={d.id} className="border-b last:border-0">
+                            <td className="py-2">{d.device_code}</td>
+                            <td>{d.device_code.split('-')[0]}</td>
+                            <td>{d.coop_name}</td>
+                            <td>
+                                <span className={d.is_online ? 'text-green-600' : 'text-red-500'}>
+                                    ● {d.is_online? 'Online' : 'Offline'}
+                                </span>
+                            </td>
+                            <td>
+                                <div className="flex gap-2">
+                                    <button onClick={() => openEditModal(d)} className="text-teal-600 border border-teal-200 rounded p-1 cursor-pointer">
+                                        <Pencil size={14} />
+                                    </button>
+                                    <button onClick={() => handleDelete(d)} className="text-teal-600 border border-teal-200 rounded p-1 cursor-pointer">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            {modalOpen && (
+                <DeviceModal 
+                    device={editingDevice}
+                    coopList={coopList}
+                    onClose={() => setModalOpen(false)}
+                    onSubmit={handleSubmit}
+                />
+            )}
+        </div>
+    );
+}
+
+function DeviceModal({ device, coopList, onClose, onSubmit }){
+    const [deviceCode, setDeviceCode] = useState(device?.device_code ?? '');
+    const [coopId, setCoopId] = useState(device?._chicken__coop_id ?? coopList[0]?.id ?? '');
+    const [saving, setSaving] = useState(false);
+
+    async function handleSave() {
+        setSaving(true);
+        try {
+            await onSubmit({ device_code: deviceCode, _chicken__coop_id: coopId})
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return(
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-96 space-y-4">
+                <p className="font-semibold">{device ? 'Edit Perangkat' : 'Tambah Perangkat'}</p>
+
+                <div>
+                    <label className="text-sm font-medium block mb-1">Kode Perangkat</label>
+                    <input value={deviceCode} onChange={(e) => setDeviceCode(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="ESP32-005" />
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium block mb-1">Kandang</label>
+                    <select value={coopId} onChange={(e) => setCoopId(e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                        {coopList.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg border cursor-pointer">Batal</button>
+                    <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-teal-500 text-white disabled:opacity-50 cursor-pointer">
+                        {saving ? 'Menyimpan...' : 'Simpan'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function AccountForm({ user, onSaved}){
+    const [name, setName] = useState(user.name);
+    const [email, setEmail] = useState(user.email);
+    const [saving, setSaving] = useState(false);
+
+    function parseDevice(ua){
+        if (!ua) return '-';
+        const os = ua.includes('Windows') ? 'Windows' : ua.includes('Mac') ? 'Mac' : ua.includes('Linux') ? 'Linux' : 'Unknown OS';
+        const browser = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Unknown Browser';
+        return `${os} | ${browser}`;
+    }
+
+    async function handleSave(){
+        setSaving(true);
+        try {
+            const updated = await updateProfile({ name, email });
+            localStorage.setItem('user', JSON.stringify(updated));
+            onSaved(updated);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return(
+        <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-3">
+                <p className="font-semibold text-sm">Informasi Akun</p>
+                <div>
+                    <label className="text-sm font-medium block mb-1">Nama Lengkap</label>
+                    <input value={name} onChange={(e) => setName(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                    <label className="text-sm font-medium block mb-1">Email</label>
+                    <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+            </div>
+
+            <div>
+                <p className="font-semibold text-sm mb-3">Informasi Sistem</p>
+                <div className="grid grid-cols-3 gap-3">
+                    <InfoBox label="Versi Aplikasi" value="v1.0.0" />
+                    <InfoBox label="Terakhir Login" value={user.last_login_at ? new Date(use.last_login_at).toLocaleString('id-ID') : '-'} />
+                    <InfoBox label="Perangkat Login" value={parseDevice(user.last_login_device)} />
+                </div>
+            </div>
+
+            <div className="col-span-2 flex justify-end">
+                <button onClick={handleSave} disabled={saving} className="bg-teal-500 textwhite px-4 py-2 rounded-lg disabled:opacity-50 cursor-pointer">
+                    {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function InfoBox({ label, value }){
+    return(
+        <div className="border rounded-lg p-2 text-center">
+            <p className="text-xs text-gray-400">{label}</p>
+            <p className="text-sm font-medium mt-1">{value}</p>
+        </div>
+    )
 }

@@ -67,4 +67,22 @@ class DeviceController extends Controller
 
         return response()->json($devices);
     }
+
+    #PUT /api/devices/{id}
+    public function update(Request $request, string $id){
+        $device = Device::find($id);
+
+        if (!$device){
+            return response()->json(['message' => 'Device tidak ditemukan.'], 404);
+        }
+
+        $validated = $request->validate([
+            '_chicken__coop_id' => 'sometimes|required|uuid|exists:_chicken__coop_id',
+            'device_code' => 'sometimes|required|string|max:255|unique:devices,device_code,' . $id, // menyimpan device tanpa mengubah device_code-nya sama sekali akan ditolak, karena Laravel menganggap kode itu "sudah dipakai".
+        ]);
+
+        $device->update($validated);
+
+        return response()->json($device);
+    }
 }

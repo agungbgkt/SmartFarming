@@ -22,6 +22,9 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 Route::middleware(['auth:sanctum', 'admin'])->get('/test-admin', function(){
     return response()->json(['message' => 'Berhasil! Kamu adalah Admin.']);
 });
+Route::middleware('auth:sanctum')->group(function(){
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+});
 
 #CRUD ADMIN & USER VIEW ChickenCoop
 Route::middleware('auth:sanctum')->group(function(){

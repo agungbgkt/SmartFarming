@@ -15,3 +15,8 @@ export async function logout(){
     localStorage.removeItem('token');
     localStorage.removeItem('user');
 }
+
+export async function updateProfile(data) {
+    const response = await api.put('/profile', data);
+    return response.data;
+}
