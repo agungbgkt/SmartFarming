@@ -1,8 +1,8 @@
     import { useState, useEffect } from 'react';
     import Sidebar from "../components/Sidebar";
-    import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone, Send, Info, Pencil, Trash2, Plus, Type} from 'lucide-react';
+    import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone, Send, Info, Pencil, Trash2, Plus, Home} from 'lucide-react';
     import { getSystemSettings, updateSystemSettings } from '../services/settings';
-    import { getCoopList, updateCoop } from '../services/coop';
+    import { deleteCoop, getCoopList, updateCoop } from '../services/coop';
     import { getAllDevices, createDevice, updateDevice, deleteDevice } from '../services/device';
     import { updateTelegramRecipient,sendTestNotification } from '../services/settings';
     import { updateProfile } from '../services/auth';
@@ -124,6 +124,16 @@
                             onToggle={() => toggleSection('integrasi')}
                         >
                             <IntegrationForm coopList={coopList} />
+                        </AccordionItem>
+
+                        <AccordionItem 
+                            icon={<Home size={18} />}
+                            title="Kandang"
+                            desc="Tambah dan kelola kandang yang dipantau."
+                            isOpen={openSection === 'kandang'}
+                            onToggle={() => toggleSection('kandang')}
+                        >
+                            <CoopForm onChanged={setCoopList} />
                         </AccordionItem>
 
                         <AccordionItem 
@@ -567,6 +577,7 @@
     function AccountForm({ user, onSaved}){
         const [name, setName] = useState(user.name);
         const [email, setEmail] = useState(user.email);
+        const [role, setRole] = useState(user.role);
         const [saving, setSaving] = useState(false);
 
         function parseDevice(ua){
@@ -579,7 +590,7 @@
         async function handleSave(){
             setSaving(true);
             try {
-                const updated = await updateProfile({ name, email });
+                const updated = await updateProfile({ name, email, role });
                 localStorage.setItem('user', JSON.stringify(updated));
                 onSaved(updated);
             } finally {
@@ -598,6 +609,10 @@
                     <div>
                         <label className="text-sm font-medium block mb-1">Email</label>
                         <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium block mb-1">Email</label>
+                        <input value={role} onChange={(e) => setRole(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
                     </div>
                 </div>
 
@@ -624,6 +639,173 @@
             <div className="border rounded-lg p-2 text-center">
                 <p className="text-xs text-gray-400">{label}</p>
                 <p className="text-sm font-medium mt-1">{value}</p>
+            </div>
+        )
+    }
+
+    function CoopForm({ onChanged }){ // onChanged mengirim daftar kandang terbaru ke komponen induk.
+        const [coops, setCoops] = useState([]);
+        const [modalOpen, setModalOpen] = useState(false);
+        const [editingCoop, setEditingCoop] = useState(null);
+
+        function loadCoops(){
+            getCoopList().then((list) => {
+                setCoops(list);
+                onChanged(list);
+            });
+        }
+
+        useEffect(() => {
+            loadCoops();
+        }, []);
+
+        function openAddModal(){
+            setEditingCoop(null);
+            setModalOpen(true);
+        }
+
+        function openEditModal(coop){
+            setEditingCoop(coop);
+            setModalOpen(true);
+        }
+
+        async function handleDelete(coop) {
+            if (!confirm(`Hapus ${coop.name}? Semua perangkat, data monitoring, dan notifikasi milik kandang ini ikut terhapus.`)) return;
+            await deleteCoop(coop.id);
+            loadCoops();
+        }
+
+        async function handleSubmit(formData) {
+            if (editingCoop){
+                await updateCoop(editingCoop.id, formData);
+            } else {
+                await createCoop(formData);
+            }
+            setModalOpen(false);
+            loadCoops();
+        }
+
+        return (
+            <div>
+                <div className="flex justify-between items-center mb-3">
+                    <p className="font-semibold">Daftar Kandang</p>
+                    <button onClick={openAddModal} className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 cursor-pointer">
+                        <Plus size={16} />Tambah Kandang
+                    </button>
+                </div>
+
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="text-left text-gray-400 border-b">
+                            <th className="py-2">Nama</th>
+                            <th>Lokasi</th>
+                            <th>Suhu (°C)</th>
+                            <th>Kelembapan</th>
+                            <th>Perangkat</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {coops.map((c) => (
+                            <tr key={c.id} className="border-b last:border-0">
+                                <td className="py-2">{c.name}</td>
+                                <td>{c.location || '-'}</td>
+                                <td>{c.temperature_min} - {c.temperature_max}</td>
+                                <td>{c.humidity_min} - {c.humidity_max}</td>
+                                <td>{c.devices?.length ?? 0}</td>
+                                <td>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => openEditModal(c)} className="text-teal-600 border border-teal-200 rounded p-1 cursor-pointer">
+                                            <Pencil size={14} />
+                                        </button>
+                                        <button onClick={() => handleDelete(c)} className="text-red-500 border border-red-200 rounded p-1 cursor-pointer">
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
+                {modalOpen && (
+                    <CoopModal
+                        coop={editingCoop}
+                        onClose={() => setModalOpen(false)}
+                        onSubmit={handleSubmit}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    function CoopModal({ coop, onClose, onSubmit }){
+        const [form, setForm] = useState({
+            name: coop?.name ?? '',
+            location: coop?.location ?? '',
+            temperature_min: coop?.temperature_min ?? 21,
+            temperature_max: coop?.temperature_max ?? 30,
+            humidity_min: coop?.humidity_min ?? 72,
+            humidity_max: coop?.humidity_max ?? 80,
+        });
+        const [error, setError] = useState('');
+        const [saving, setSaving] = useState(false);
+
+        function setField(key, value){
+            setForm({...form, [key]: value });
+        }
+
+        async function handleSave() {
+            setSaving(true);
+            setError('');
+            try {
+                await onSubmit(form);
+            } catch (err){
+                const errors = err.response?.data?.errors;
+                setError(errors ? Object.values(errors).flat().join(' ') : (err.response?.data?.message ?? 'Gagal menyimpan.'));
+            } finally {
+                setSaving(false);
+            }
+        }
+
+        return (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 w-[28rem] space-y-4">
+                    <p className="font-semibold">{coop ? 'Edit Kandang' : 'Tambah Kandang'}</p>
+                    <div>
+                        <label className="text-sm font-medium block mb-1">Nama Kandang</label>
+                        <input value={form.name} onChange={(e) => setField('name', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="Kandang Ayam"/>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium block mb-1">Lokasi</label>
+                        <input value={form.location} onChange={(e) => setField('location', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="Area"/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-sm font-medium block mb-1">Suhu Minimum</label>
+                            <input type="number" value={form.temperature_min} onChange={(e) => setField('temperature_min', e.target.value)} className="w-full border rounded-lg px-3 py-2"/>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium block mb-1">Suhu Maksimum</label>
+                            <input type="number" value={form.temperature_max} onChange={(e) => setField('temperature_max', e.target.value)} className="w-full border rounded-lg px-3 py-2"/>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium block mb-1">Kelembapan Minimum</label>
+                            <input type="number" value={form.humidity_min} onChange={(e) => setField('humidity_min', e.target.value)} className="w-full border rounded-lg px-3 py-2"/>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium block mb-1">Kelembapan Maximum</label>
+                            <input type="number" value={form.humidity_max} onChange={(e) => setField('humidity_max', e.target.value)} className="w-full border rounded-lg px-3 py-2"/>
+                        </div>
+                    </div>
+                    {error && <p className="text-sm text-red-500">{error}</p>}
+                    <div className="flex justify-end gap-2">
+                        <button onClick={onClose} className="px-4 py-2 rounded-lg border cursor-pointer">Batal</button>
+                        <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-teal-500 text-white disabled:opacity-50 cursor-pointer">
+                            {saving ? 'Menyimpan' : 'Simpan'}
+                        </button>
+                    </div>
+                </div>
             </div>
         )
     }
