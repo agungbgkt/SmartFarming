@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, LayoutGrid, Smartphone, History, Bell, Settings } from 'lucide-react';
+import { Menu, X, LayoutGrid, Smartphone, History, Bell, Settings, LogOut } from 'lucide-react';
+import { logout } from "../services/auth";
+import { ProtectedRoute, GuestRoute } from "./outeGuards";
 
 // Menu
 const menuItems = [
@@ -8,7 +10,7 @@ const menuItems = [
     { key: 'device', path:"/device", icon: Smartphone },
     { key: 'history', path: "/history", icon: History },
     { key: 'notifications', path: "/notifications", icon: Bell },
-    { key: 'settings', path: "/settings", icon: Settings },
+    { key: 'settings', path: "/settings", icon: Settings, adminOnly: true },
 ];
 
 export default function Sidebar(){
@@ -37,6 +39,21 @@ export default function Sidebar(){
         // setHideTimer();
     }
 
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const visibleMenu = menuItems.filter((item) => !item.adminOnly || user.role === 'admin');
+
+    async function handleLogout() {
+        try { // logout() di services/auth.js menghapus localStorage hanya kalau request-nya berhasil. Kalau token sudah mati, request gagal dan penghapusan dilewati. finally memastikan user selalu keluar.
+            await logout();
+        } catch {
+            // token mungkin sudah tidak berlaku di server, tetap lanjut keluar.
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/login');
+        }
+    }
+
     return (
         <>
             <button 
@@ -44,8 +61,8 @@ export default function Sidebar(){
                 className="fixed top-2 left-4 z-50 text-gray-600 bg-transparent rounded-lg p-2 shadow cursor-pointer">
                 {visible ? <X size={30} /> : <Menu size={30} />}
             </button>
-            <aside className={`fixed top-0 left-0 h-full w-26 bg-transparent flex flex-col items-center mt-25 gap-6 transition-transform duration-300 z-40 ${visible ? "translate-x-0" : "-translate-x-full"}`}>
-                {menuItems.map(({ key, path, icon: Icon}) => (
+            <aside className={`fixed top-0 left-0 h-screen w-20 bg-transparant flex flex-col items-center pt-25 pb-6 gap-6 transition-transform duration-300 z-40 ${visible ? "translate-x-0" : "-translate-x-full"}`}>
+                {visibleMenu.map(({ key, path, icon: Icon}) => (
                     <div 
                         key={key}
                         onClick={() => handleMenuClick(path)}
@@ -54,6 +71,14 @@ export default function Sidebar(){
                         <Icon size={25} />
                     </div>
                 ))}
+
+                <button 
+                    onClick={handleLogout}
+                    title="Keluar"
+                    className="mt-auto w-15 h-15 rounded-full bg-white flex items-center justify-center text-red-500 cursor-pointer"
+                >
+                    <LogOut size={25} />
+                </button>
             </aside>
         </>
     )

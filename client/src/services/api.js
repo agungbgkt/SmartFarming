@@ -15,4 +15,16 @@ api.interceptors.request.use((config) => { // jalan sebelum tiap request dikirim
     return config;
 });
 
+api.interceptors.response.use(
+    (response) => response,
+    (error) => { // error.response?.status === 401 && localStorage.getItem('token'): hanya bereaksi kalau user memang pernah punya token.
+        if (error.response?.status === 401 && localStorage.getItem('token')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error); // Promise.reject(error) tetap dikembalikan supaya catch di pemanggil (misalnya form Login) tetap berjalan.
+    }
+);
+
 export default api;
