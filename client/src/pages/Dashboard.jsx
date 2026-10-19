@@ -3,7 +3,7 @@ import { getCoopList } from '../services/coop';
 import  Sidebar  from '../components/Sidebar';
 import { Bell } from 'lucide-react';
 import { getMonitoring } from '../services/monitoring';
-import MonitoringChart from '../components/monitoringCard';
+import MonitoringChart from '../components/MonitoringCard';
 import MonitoringSummary from '../components/MonitoringSummary';
 import AlertList from '../components/AlertList';
 import GreenhouseData from '../components/GreenhouseData';
