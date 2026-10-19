@@ -10,18 +10,17 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\TelegramRecipientController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Broadcast;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
 #Register,Login,Logout,cek role
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']); #middleware('auth:sanctum') untuk verifikasi apakah token valid.
-Route::middleware(['auth:sanctum', 'admin'])->get('/test-admin', function(){
-    return response()->json(['message' => 'Berhasil! Kamu adalah Admin.']);
-});
+
 Route::middleware('auth:sanctum')->group(function(){
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 });
@@ -64,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function(){
 Route::middleware(['auth:sanctum', 'admin'])->group(function(){
     Route::get('/users', [UserController::class, 'index']);
     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
+    Route::put('/users/{id}/password', [UserController::class, 'resetPassword']);
 
     Route::get('/telegram-recipients', [TelegramRecipientController::class, 'index']);
     Route::post('/telegram-recipients', [TelegramRecipientController::class, 'store']);
@@ -77,3 +77,5 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function(){
     Route::get('/settings/system', [SystemSettingController::class, 'show']);
     Route::put('/settings/system', [SystemSettingController::class, 'update']);
 });
+
+Route::post('/broadcasting/auth', fn (Request $request) => Broadcast::auth($request))->middleware('auth:sanctum');

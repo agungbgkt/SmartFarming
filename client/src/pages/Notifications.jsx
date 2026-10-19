@@ -10,6 +10,7 @@ const TYPE_LABELS = { // TYPE_LABELS sebagai lookup object, daripada 5 percabang
     low_temperature: { text: '▼ Suhu', className: 'text-orange-600'},
     high_humidity: { text: '▲ Kelembapan', className: 'text-blue-600'},
     low_humidity: { text: '▼ Kelembapan', className: 'text-blue-600'},
+    device_offline: { text: '● Offline', className: 'text-red-600'},
 }
 
 export default function Notifications(){
@@ -96,6 +97,7 @@ export default function Notifications(){
                                     <option value="normal">Normal</option>
                                     <option value="temperature">Suhu</option>
                                     <option value="humidity">Kelembapan</option>
+                                    <option value="offline">Perangkat Offline</option>
                                 </select>
 
                                 <select value={coopFilter} onChange={(e) => setCoopFilter(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm">

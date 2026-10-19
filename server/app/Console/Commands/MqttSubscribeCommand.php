@@ -13,6 +13,7 @@ use App\Services\TelegramService;
 use Illuminate\Support\Carbon;
 use App\Events\AlertCreated;
 use App\Events\MonitoringUpdated;
+use App\Models\SystemSetting;
 
 class MqttSubscribeCommand extends Command
 {
@@ -20,17 +21,56 @@ class MqttSubscribeCommand extends Command
     protected $description = 'Dengarkan Data Suhu & Kelembapan dari semua kandang lewat MQTT'; #teks penjelas, muncul kalau kamu jalanin php artisan list.
     public function handle()
     {
-        $mqtt = MQTT::connection(); #buka koneksi ke broker Mosquitto, pakai pengaturan yang ada di config/mqtt-client.php.
-        $this->info('Mendengarkan topic kandang/+/data ...'); #buat kasih tau "sistem lagi jalan".
+        // $mqtt = MQTT::connection(); #buka koneksi ke broker Mosquitto, pakai pengaturan yang ada di config/mqtt-client.php.
+        // $this->info('Mendengarkan topic kandang/+/data ...'); #buat kasih tau "sistem lagi jalan".
         
-        $mqtt->subscribe('kandang/+/data', function(string $topic, string $message){ #dengerin semua topic yang polanya kandang/APAPUN/data, dan setiap kali ada pesan masuk, jalankan function di dalam kurung ini.
-            $this->info("MQTT MASUK!");
-            $this->info("Topic: {$topic}");
-            $this->info("Message: {$message}");
-            $this->processMessage($topic, $message);
-        }, 0); #Angka 0 ini QoS (Quality of Service), artinya "kirim sekali, nggak ada jaminan sampai" (paling ringan/cepat).
+        // $mqtt->subscribe('kandang/+/data', function(string $topic, string $message){ #dengerin semua topic yang polanya kandang/APAPUN/data, dan setiap kali ada pesan masuk, jalankan function di dalam kurung ini.
+        //     $this->info("MQTT MASUK!");
+        //     $this->info("Topic: {$topic}");
+        //     $this->info("Message: {$message}");
+        //     $this->processMessage($topic, $message);
+        // }, 0); #Angka 0 ini QoS (Quality of Service), artinya "kirim sekali, nggak ada jaminan sampai" (paling ringan/cepat).
 
-        $mqtt->loop(true);
+        // $mqtt->loop(true);
+        try { // try/catch di dalam callback. Sekarang satu payload yang bikin database menolak (misal "temperature": "abc") atau satu masalah jaringan saat kirim Telegram menjatuhkan seluruh listener.
+            $mqtt = MQTT::connection();
+
+            if (function_exists('pcntl_signal')){ // pcntl_signal: membuat systemctl restart atau supervisorctl restart menutup koneksi dengan rapi. Ekstensi pcntl tidak ada di Windows (makanya dibungkus function_exists).
+                pcntl_async_signals(true);
+                $stop = function () use ($mqtt){
+                    $this->info('Sinyal berhenti diterima, menutup koneksi MQTT...');
+                    $mqtt->interrupt();
+                };
+                pcntl_signal(SIGTERM, $stop);
+                pcntl_signal(SIGINT, $stop);
+            }
+
+            $this->info('Mendengarkan topic kandang/+/data ...');
+
+            $mqtt->subscribe('kandang/+/data', function (string $topic, string $message){
+                try {
+                    $this->processMessage($topic, $message);
+                } catch (\Throwable $e){
+                    $this->error("Gagal memproses pesan dari {$topic}: " . $e->getMessage());
+                    report($e);
+                }
+            }, 0);
+
+            $mqtt->loop(true);
+            $mqtt->disconnect();
+
+            return self::SUCCESS;
+        } catch (\Throwable $e){ // catch di luar: kalau koneksi ke broker benar-benar putus atau gagal dibuat, command berhenti dengan kode gagal, sehingga penjaga proses bisa menyalakannya lagi.
+            $this->error('MQTT berhenti: ' . $e->getMessage());
+            report($e);
+            sleep(5); // sleep(5) sebelum keluar: jeda antar percobaan.
+
+            return self::FAILURE;
+        }
+    }
+
+    public function settings(): SystemSetting { // SystemSetting::create([])->fresh(): nilai bawaan database tidak terbawa di objek hasil create(), jadi tanpa fresh() semua toggle terbaca null (mati).
+        return SystemSetting::first() ?? SystemSetting::create([])->fresh();
     }
 
     #Olah data yang masuk
@@ -46,6 +86,12 @@ class MqttSubscribeCommand extends Command
             return;
         }
 
+        // Pengecekan is_numeric baru. Payload seperti "temperature": "abc" sekarang cukup memberi peringatan, tidak lagi memicu error di callback.
+        if (! is_numeric($data['temperature']) || ! is_numeric($data['humidity'])){
+            $this->warn("Nilai suhu/kelembapan bukan angka dari topic: {$topic}");
+            return;
+        }
+
         $device = Device::where('device_code', $deviceCode)->first(); #Cari device di database berdasarkan device_code yang didapat dari topic tadi.
 
         if (! $device){
@@ -53,27 +99,35 @@ class MqttSubscribeCommand extends Command
             return;
         }
 
+        $device->update(['last_seen_at' => now(), 'offline_notified_at' => null]);  #update "kapan terakhir device ini ngirim data",nanti dipakai buat deteksi device offline.
+        $settings = $this->settings();
+
+        if (! $settings->monitoring_mode){
+            $this->warn("Mode monitoring nonaktif, data dari {$deviceCode} tidak disimpan.");
+            return;
+        }
+
+        $temperature = (float) $data['temperature'];
+        $humidity = (float) $data['humidity'];
         $recordedAt = now();
         
         $monitoring = Monitoring::create([ #nyimpen 1 baris data baru ke tabel monitorings.
                         'id' => (string) Str::uuid(),
                         '_chicken__coop_id' => $device->_chicken__coop_id, #"nyambungin" lewat data $device yang ambil dari database barusan (device tau dia dipasang di kandang mana lewat relationship.
-                        'temperature' => $data['temperature'],
-                        'humidity' => $data['humidity'],
+                        'temperature' => $temperature,
+                        'humidity' => $humidity,
                         'recorded_at' => $recordedAt, #dicatat sebagai "sekarang", yaitu waktu data ini beneran diterima server.
         ]);
 
-
         event(new MonitoringUpdated($monitoring)); #cara "menyalakan" Event di Laravel: bungkus data yang relevan ($monitoring) ke dalam Event, lalu panggil helper event().
-
-        $device->update(['last_seen_at' => now()]); #update "kapan terakhir device ini ngirim data",nanti dipakai buat deteksi device offline.
 
         $this->info("Data tersimpan: {$deviceCode} -> {$data['temperature']}°C, {$data['humidity']}%"); #lihat langsung di terminal tiap ada data masuk.
 
-        $this->checkTreshold($device->_chicken__coop_id, $data['temperature'], $data['humidity'], $recordedAt);
+        $this->checkTreshold($device->_chicken__coop_id, $data['temperature'], $data['humidity'], $recordedAt, $settings);
     }
 
-    protected function checkTreshold(string $coopId, float $temperature, float $humidity, Carbon $recordedAt): void{
+    #Urutan di checkTreshold: laporan “Normal” ditentukan sebelum disaring toggle. Kalau disaring dulu, mematikan “Peringatan Suhu” membuat suhu yang melewati batas terlihat “tidak ada alert”, lalu sistem keliru mengirim “kondisi normal”.
+    protected function checkTreshold(string $coopId, float $temperature, float $humidity, Carbon $recordedAt, SystemSetting $settings): void{
         $coop = ChickenCoop::find($coopId);
 
         if (! $coop){
@@ -94,12 +148,14 @@ class MqttSubscribeCommand extends Command
             $alerts[] = ['type' => 'low_humidity', 'message' => "Kelembapan  {$coop->name} turun ke {$humidity}%, dibawah batas {$coop->humidity_min}%."];
         }
 
-        if (empty($alerts) && in_array($recordedAt->minute, [0,1,2])){
+        if (empty($alerts) && $this->reportIsDue($coopId, $recordedAt, $settings)){
             $alerts[] = [
                 'type' => 'normal',
                 'message' => "Suhu & Kelembapan {$coop->name} Normal. Suhu {$temperature}°C, Kelembapan {$humidity}%.",
             ];
         }
+
+        $alerts = array_filter($alerts, fn ($alert) => $this->NotificationsEnabled($alert['type'], $settings));
 
         foreach ($alerts as $alertData){
             $alert = Alert::create([
@@ -114,12 +170,33 @@ class MqttSubscribeCommand extends Command
 
             $alert->update([
                 'is_sent' => $sent,
-                'sent_at' => $sent ? now() : null,
+                'send_at' => $sent ? now() : null,
             ]);
 
             event(new AlertCreated($alert));
 
             $this->info($sent ? "Alert terkirim: {$alertData['type']}" : "Alert gagal kirim: {$alertData['type']}");
         }
+    }
+
+    protected function reportIsDue(string $coopId, Carbon $recordedAt, SystemSetting $settings): bool {
+        $interval = max(1, (int) $settings->report_interval_minutes);
+        if (!in_array($recordedAt->minute % $interval, [0, 1, 2])){ // $recordedAt->minute % $interval: untuk interval 60 sama dengan minute. Untuk 15, menit 0, 15, 30, 45 plus toleransi 2 menit.
+            return false;
+        }
+
+        return ! Alert::where('_chicken__coop_id', $coopId)
+            ->where('type', 'normal')
+            ->where('created_at', '>=', now()->subMinutes(max($interval - 5, 1)))
+            ->exists(); // Cek exists() mencegah dua pembacaan di jendela yang sama (misalnya kiriman terjadwal dan kiriman darurat berdekatan) menghasilkan dua laporan.
+    }
+
+    protected function NotificationsEnabled(string $type, SystemSetting $settings): bool {
+        return match(true){
+            $type === 'normal' => (bool) $settings->notify_report,
+            str_contains($type, 'temperature') => (bool) $settings->notify_temperature,
+            str_contains($type, 'humidity') => (bool) $settings->notify_humidity,
+            default => true,
+        };
     }
 }

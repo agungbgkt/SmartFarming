@@ -11,6 +11,19 @@ import GreenhouseData from '../components/GreenhouseData';
 export default function Dashboard(){
     const [coopList, setCoopList] = useState([]);
     const [monitoringData, setMonitoringData] = useState([]); // state tambahan supaya dashboard tidak melakukan banyak request. cukup 1 kali request ke monitoring data bisa digunakan untuk 2 component
+    const [selectedCoopIndex, setSelectedCoopIndex] = useState(0); // tambahan untuk slider grafik di dashboard
+    const selectedCoop = coopList[selectedCoopIndex];
+
+    const handlePreviousCoop = () => {
+        setSelectedCoopIndex((prev) => 
+            prev === 0 ? coopList.length - 1 : prev - 1
+        );
+    }
+
+    const handleNextCoop = () => {
+        setSelectedCoopIndex((prev) =>
+            prev === coopList.length - 1 ? 0 : prev + 1)
+    };
 
     useEffect(() => {
         getCoopList().then(setCoopList); // cara React "menjalankan sesuatu" setelah komponen pertama kali muncul di layar.
@@ -56,8 +69,12 @@ export default function Dashboard(){
                     <h1 className="text-3xl font-bold">Dashboard</h1>
                     {/* Card Grafik - Placeholder dulu */}
                     <MonitoringChart 
-                        coopId={coopList[0]?.id}
-                        coopName={coopList[0]?.name}
+                        coopId={selectedCoop?.id}
+                        coopName={selectedCoop?.name}
+                        coopIndex={selectedCoopIndex}
+                        totalCoops={coopList.length}
+                        onPrevious={handlePreviousCoop}
+                        onNext={handleNextCoop}
                     />
                     {/* 3 Card sejajar - Placeholder */}
                     <MonitoringSummary coopList={coopList}/>

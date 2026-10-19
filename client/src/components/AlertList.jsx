@@ -1,6 +1,7 @@
 import { useState, useEffect} from 'react';
 import { Send } from 'lucide-react';
 import { getAlerts } from '../services/alert';
+import useChannelEvent from '../hooks/useChannelEvent';
 
 export default function AlertList(){
     const [alerts, setAlerts] = useState([]);
@@ -8,6 +9,10 @@ export default function AlertList(){
     useEffect(() => {
         getAlerts({ limit: 5 }).then(setAlerts);
     }, []);
+
+    useChannelEvent('alerts.global', 'alert.created', ({ alert }) => {
+        setAlerts((prev) => [alert, ...prev.filter((a) => a.id !== alert.id)].slice(0, 5)); // .slice(0, 5): card Notifikasi hanya menampilkan 5 teratas, sama seperti getAlerts({ limit: 5 }).
+    });
 
     return (
         <div className="bg-white rounded-xl p-4 shadow">

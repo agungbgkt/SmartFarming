@@ -1,11 +1,12 @@
     import { useState, useEffect } from 'react';
     import Sidebar from "../components/Sidebar";
-    import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone, Send, Info, Pencil, Trash2, Plus, Home} from 'lucide-react';
+    import { Bell, ChevronDown, Search, Settings as SettingsIcon, Thermometer, Link2, User, Smartphone, Send, Info, Pencil, Trash2, Plus, Home, Users} from 'lucide-react';
     import { getSystemSettings, updateSystemSettings } from '../services/settings';
     import { deleteCoop, getCoopList, updateCoop } from '../services/coop';
     import { getAllDevices, createDevice, updateDevice, deleteDevice } from '../services/device';
     import { updateTelegramRecipient,sendTestNotification } from '../services/settings';
     import { updateProfile } from '../services/auth';
+    import { getUsers, updateUserRole, resetUserPassword } from '../services/user';
 
     export default function Settings(){
         const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
@@ -134,6 +135,16 @@
                             onToggle={() => toggleSection('kandang')}
                         >
                             <CoopForm onChanged={setCoopList} />
+                        </AccordionItem>
+
+                        <AccordionItem 
+                            icon={<Users size={18} />}
+                            title="Pengguna"
+                            desc="Kelola role dan atur ulang password pengguna."
+                            isOpen={openSection === 'pengguna'}
+                            onToggle={() => toggleSection('pengguna')}
+                        >
+                            <UsersForm currentUser={user} />
                         </AccordionItem>
 
                         <AccordionItem 
@@ -808,4 +819,116 @@
                 </div>
             </div>
         )
+    }
+
+    function UsersForm({ currentUser }){
+        const [users, setUsers] = useState([]);
+        const [resetTarget, setResetTarget] = useState(null);
+        const [message, setMessage] = useState(null);
+
+        useEffect(() => {
+            getUsers().then(setUsers);
+        }, []);
+
+        async function handleRoleChange(user, role) {
+            setMessage(null);
+            try {
+                await updateUserRole(user.id, role);
+                setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, role } : u)));
+            } catch (err){
+                setMessage({ type: 'error', text: err.response?.data?.message ?? 'Gagal mengubah role.' });
+            }
+        }
+
+        async function handleReset(password) {
+            await resetUserPassword(resetTarget.id, password);
+            setMessage({ type: 'success', text: `Password ${resetTarget.name} diperbarui. Semua sesi login-nya diakhiri.` });
+            setResetTarget(null);
+        }
+
+        return (
+            <div>
+                {message && (
+                    <p className={`text-sm mb-3 ${message.type === 'success' ? 'text-gray-600' : 'text-red-500'}`}>
+                        {message.text}
+                    </p>
+                )}
+
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="text-left text-gray-400 border-b">
+                            <th className="py-2">Nama</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map((u) => (
+                            <tr key={u.id} className="border-b last:border-0">
+                                <td className="py-2">{u.name}</td>
+                                <td>{u.email}</td>
+                                <td>
+                                    <select
+                                        value={u.role}
+                                        disabled={u.id === currentUser.id}
+                                        onChange={(e) => handleRoleChange(u, e.target.value)}
+                                        className="border rounded-lg px-2 py-1"
+                                    >
+                                            <option value="viewer">Viewer</option>
+                                            <option value="admin">Admin</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button onClick={() => setResetTarget(u)} className="text-teal-600 border border-teal-200 rounded px-2 py-1 text-xs cursor-pointer">
+                                        Reset Password
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {resetTarget && (
+                    <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} onSubmit={handleReset} />
+                )}
+            </div>
+        );
+    }
+
+    function ResetPasswordModal({ user, onClose, onSubmit }){
+        const [password, setPassword] = useState('');
+        const [error, setError] = useState('');
+        const [saving, setSaving] = useState(false);
+
+        async function handleSave() {
+            setSaving(true);
+            setError('');
+            try {
+                await onSubmit(password);
+            } catch (err){
+                const error = err.response?.data?.errors;
+                setError(errors ? Object.values(errors).flat().join('') : 'Gagal mengatur ulang password.');
+            } finally {
+                setSaving(false);
+            }
+        }
+
+        return (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 w-96 space-y-4">
+                    <p className="font-semibold">Reset password: {user.name}</p>
+                    <div>
+                        <label className="text-sm font-medium block mb-1">Password baru (minimal 8 karakter)</label>
+                        <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    {error && <p className="text-sm text-red-500">{error}</p>}
+                    <div className="flex justify-end gap-2">
+                        <button onClick={onClose} className="px-4 py-2 rounded-lg border cursor-pointer">Batal</button>
+                        <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-teal-500 text-white disabled:opacity-50 cursor-pointer">
+                            {saving ? 'Menyimpan...' : 'Simpan'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     }

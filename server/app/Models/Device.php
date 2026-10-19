@@ -12,15 +12,19 @@ class Device extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    const OFFLINE_AFTER_MINUTES = 20;
+    
     protected $fillable = [
         '_chicken__coop_id',
         'device_code',
         'last_seen_at',
+        'offline_notified_at',
     ];
 
     #bikin Laravel otomatis "ubah bentuk" data kolom itu jadi objek tanggal yang gampang di format.
     protected $casts = [
         'last_seen_at'=> 'datetime',
+        'offline_notified_at' => 'datetime',
     ];
     protected static function boot() #dipakai buat "pasang" event listener.
     {

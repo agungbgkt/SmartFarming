@@ -15,7 +15,7 @@ services: #untuk membuat daftar/bagian mesin" apa saja yang mau dinyalakan.
       - smartfarm_network #biar service ini bisa "ngobrol" dengan service lain yang ada di network yang sama.
 
   mosquitto:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto:2.1.2
     container_name: smartfarm_mosquitto
     restart: unless-stopped
     ports:

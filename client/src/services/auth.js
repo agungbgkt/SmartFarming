@@ -5,8 +5,8 @@ export async function login(email, password) {
     return response.data;
 }
 
-export async function register(name, email, password){
-    const response = await api.post('/register', {name, email, password});
+export async function register(name, email, password, registrationCode){
+    const response = await api.post('/register', {name, email, password, registration_code: registrationCode});
     return response.data; // response.data — axios ngebungkus hasil response dalam objek yang lebih besar (isinya status, headers, dll).
 }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -33,5 +34,23 @@ class UserController extends Controller
         $user->update(['role' => $validated['role']]);
 
         return response()->json($user);
+    }
+
+    #Lupa Password
+    public function resetPassword(Request $request, string $id){
+        $validated = $request->validate([
+            'password' => 'required|string|min:8',
+        ]);
+
+        $user = User::find($id);
+
+        if (!$user){
+            return response()->json(['message' => 'Akun tidak ditemukan'], 404);
+        }
+
+        $user->forceFill(['password' => Hash::make($validated['password'])])->save();
+        $user->tokens()->delete(); // orang yang lupa password mungkin saja sedang dibobol, dan sesi lama harus ikut mati.
+
+        return response()->json(['message' => 'Password diperbarui dan semua sesi login akun ini diakhiri.']);
     }
 }

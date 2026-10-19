@@ -14,11 +14,16 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        $password = env('ADMIN_SEED_PASSWORD');
+        if (empty($password)){
+            throw new \RuntimeException('ADMIN_SEED_PASSWORD belum diisi di .env');
+        }
+
         User::create([
             'name' => 'SupermamaFarm',
             'email' => 'admin@supermamaFarm.com',
-            'password' => Hash::make(env('ADMIN_SEED_PASSWORD','ganti_password_ini')),
-            'role' => 'admin',
+            'password' => Hash::make($password),
+            'role' => 'admin',   
         ]);
     }
 }

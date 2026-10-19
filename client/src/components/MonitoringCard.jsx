@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { getMonitoring } from "../services/monitoring";
+import useChannelEvent from "../hooks/useChannelEvent";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const RANGE_OPTIONS = [
     { value: 'today', label: 'Hari ini'},
@@ -8,7 +10,7 @@ const RANGE_OPTIONS = [
     { value: '30days', label: '1 bulan terakhir'},
 ];
 
-export default function MonitoringChart({ coopId, coopName }){ // pakai props — komponen ini nggak nyari data kandang sendiri, tapi nerima dari komponen induk
+export default function MonitoringChart({ coopId, coopName, coopIndex, totalCoops, onPrevious, onNext }){ // pakai props — komponen ini nggak nyari data kandang sendiri, tapi nerima dari komponen induk
     const [data, setData] = useState([]);
     const [range, setRange] = useState('today');
     const [loading, setLoading] = useState(true);
@@ -27,6 +29,25 @@ export default function MonitoringChart({ coopId, coopName }){ // pakai props �
             .finally(() => setLoading(false));
     }, [coopId, range]);
 
+    useChannelEvent(
+        coopId ? `kandang.${coopId}` : null,
+    'monitoring.update',
+    ({ monitoring }) => { // ({ monitoring }): payload event berbentuk { monitoring: {...} } karena MonitoringUpdated punya properti publik $monitoring
+        setData((prev) => { // setData((prev) => ...) (bentuk fungsi): handler ini berjalan di luar siklus render, jadi data yang “tertangkap” bisa usang. prev selalu nilai terbaru.
+            if (prev.some((d) => d.recorded_at === monitoring.recorded_at)) return prev; // recorded_at: kalau request awal dan event kebetulan membawa pembacaan yang sama, titiknya tidak ganda.
+            return [
+                ...prev,
+                {
+                    temperature: monitoring.temperature,
+                    humidity: monitoring.humidity,
+                    recorded_at: monitoring.recorded_at,
+                    jam: new Date(monitoring.recorded_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}),
+                },
+            ];
+        });
+    }
+    );
+
     return (
         <div className="bg-white rounded-xl p-4 shadow">
             <div className="flex justify-between items-start mb-4">
@@ -35,11 +56,33 @@ export default function MonitoringChart({ coopId, coopName }){ // pakai props �
                     <p className="text-sm text-gray-400">{coopName ?? "Memuat..."}</p>
                 </div>
 
-                <select value={range} onChange={(e) => setRange(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm">
-                    {RANGE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={onPrevious}
+                        disabled={totalCoops <= 1}
+                        aria-label="Kandang sebelumnya"
+                        className="p-2 border rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                            <ChevronLeft size={18} />
+                    </button>
+
+                    <span className="text-sm text-gray-500 min-w-16 text-center">
+                        {totalCoops > 0 ? `${coopIndex + 1} / ${totalCoops}` : "0 / 0"}
+                    </span>
+
+                    <button
+                        onClick={onNext}
+                        disabled={totalCoops <= 1}
+                        aria-label="Kandang berikutnya"
+                        className="p-2 border rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                            <ChevronRight size={18} />
+                    </button>
+
+                    <select value={range} onChange={(e) => setRange(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm">
+                        {RANGE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {loading ? (

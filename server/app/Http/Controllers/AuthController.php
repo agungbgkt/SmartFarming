@@ -13,11 +13,24 @@ class AuthController extends Controller
 {
     #Register
    public function register(Request $request){ #Request tipe/jenis | $request itu variabel yang isinya semua data yang dikirim dari React ke endpoint ini.
-    $validated = $request->validate([ #cek input dari React sebelum diproses.
+    
+   $code = config('app.registration_code');
+   if (empty($code)){
+    return response()->json(['message' => 'Pendaftaran ditutup. Hubungi admin.'], 404);
+   }
+
+   $validated = $request->validate([ #cek input dari React sebelum diproses.
         'name'     => 'required|string|max:255',
-        'email'    => 'required|email|unique:users', #unique:users,email artinya Laravel cek ke tabel users, kolom email, pastikan belum ada yang pakai email itu. Mencegah orang daftar dobel pakai email yang sama.
+        'email'    => 'required|email|unique:users,email', #unique:users,email artinya Laravel cek ke tabel users, kolom email, pastikan belum ada yang pakai email itu. Mencegah orang daftar dobel pakai email yang sama.
         'password' => 'required|string|min:8',
+        'registration_code' => 'required|string',
     ]);
+
+    if (!hash_equals((string) $code, $validated['registration_code'])){
+        throw ValidationException::withMessages([
+            'registration_code' => ['Kode pendaftaran salah'],
+        ]);
+    }
 
     $user = User::create([
         'name'     => $validated['name'],

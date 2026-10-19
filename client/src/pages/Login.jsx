@@ -12,7 +12,8 @@ export default function Login(){
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false); // false = password tersembunyi, true = password terlihat.
     const [isSignUp, setIsSignUp] = useState(false); // false = login, true = sign up
-    
+    const [signUpCode, setSignUpCode] = useState('');
+
     // state terpisah biar saat ngetik di satu form ngga "bocor" ke form satunya.
     const [signUpName, setSignUpName] = useState('');
     const [signUpEmail, setSignUpEmail] = useState('');
@@ -44,13 +45,16 @@ export default function Login(){
         setSignUpError('');
         setSignUpLoading(true);
 
+        const data = await register(signUpName, signUpEmail, signUpPassword, signUpCode);
+
         try{
             const data = await register(signUpName, signUpEmail, signUpPassword);
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             navigate('dashboard');
         } catch (err){
-            setSignUpError('Gagal mendaftar. Perika kembali data yang dimasukkan.');
+            const errors = err.response?.data?.errors;
+            setSignUpError(errors ? Object.values(errors).flat().join('') : (err.response?.data?.message ?? 'Gagal mendaftar.'));
         } finally {
             setSignUpLoading(false);
         }
@@ -113,7 +117,7 @@ export default function Login(){
                         {/* Lupa Password */}
                         <div className="flex justify-center">
                             <button type="button" onClick={() => navigate('/forgot-password')} className="text-xs text-gray-500 hover:text-teal-600 cursor-pointer transition">
-                                Lupa password?
+                                Lupa password? Hubungi admin untuk mengatur ulang.
                             </button>
                         </div>
                         {/* Button */}
@@ -198,7 +202,18 @@ export default function Login(){
                             <p className="text-center text-sm mb-8 max-w-[280px]">
                                 Untuk terhubung dengan kami, silakan daftar menggunakan informasi pribadi anda
                             </p>
-                            <button type="button" onClick={() => setIsSignUp(true)} className="border-2 border-white px-8 py-2 rounded-full font-semibold hover:bg-white hover:text-teal-500 transition cursor-pointer">
+                            <div className="relative">
+                                <KeyRound size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                                <input 
+                                    type="text"
+                                    placeholder="Kode pendaftaran"
+                                    value={signUpCode}
+                                    onChange={(e) => setSignUpCode(e.target.value)}
+                                    className="w-full bg-gray-100 border-0 rounded-lg pl-10 pr-4 py-3 focus:ring-teal-500 text-black"
+                                    required
+                                />
+                            </div>
+                            <button type="button" onClick={() => setIsSignUp(true)} className="border-2 border-white px-8 py-2 mt-5 rounded-full font-semibold hover:bg-white hover:text-teal-500 transition cursor-pointer">
                                 DAFTAR
                             </button>
                         </>

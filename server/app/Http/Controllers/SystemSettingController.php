@@ -37,7 +37,7 @@ class SystemSettingController extends Controller
     public function update(Request $request){
         $validated = $request->validate([
             'timezone' => 'required|string',
-            'report_interval_minutes' => 'required|integer|min:1',
+            'report_interval_minutes' => 'required|integer|in:15,30,60',
             'monitoring_mode' => 'required|boolean',
             'notify_report' => 'required|boolean',
             'notify_temperature' => 'required|boolean',

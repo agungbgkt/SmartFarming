@@ -57,7 +57,7 @@ class DeviceController extends Controller
                 '_chicken__coop_id' => $device->_chicken__coop_id,
                 'device_code' => $device->device_code,
                 'coop_name' => $device->ChickenCoop->name,
-                'is_online' => $device->last_seen_at && $device->last_seen_at->gt(now(20)), // logic status online/offline,Device dianggap online kalau last_seen_at-nya kurang dari 20 menit yang lalu, Kalau last_seen_at masih null otomatis dianggap offline.
+                'is_online' => $device->last_seen_at && $device->last_seen_at->gt(now()->subMinutes(\App\Models\Device::OFFLINE_AFTER_MINUTES)), // logic status online/offline,Device dianggap online kalau last_seen_at-nya kurang dari 20 menit yang lalu, Kalau last_seen_at masih null otomatis dianggap offline.
                 'last_seen_at' => $device->last_seen_at,
                 'temperature' => $latest->temperature ?? null,
                 'humidity' => $latest->humidity ?? null,

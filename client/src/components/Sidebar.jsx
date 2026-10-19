@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, LayoutGrid, Smartphone, History, Bell, Settings, LogOut } from 'lucide-react';
 import { logout } from "../services/auth";
 import { ProtectedRoute, GuestRoute } from "./outeGuards";
+import { disconnectPusher } from "../services/realtime";
 
 // Menu
 const menuItems = [
@@ -48,6 +49,7 @@ export default function Sidebar(){
         } catch {
             // token mungkin sudah tidak berlaku di server, tetap lanjut keluar.
         } finally {
+            disconnectPusher();
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             navigate('/login');

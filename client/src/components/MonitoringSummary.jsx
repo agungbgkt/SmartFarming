@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getMonitoring } from "../services/monitoring";
+import useChannelEvent from "../hooks/useChannelEvent";
 
 export default function MonitoringSummary({coopList = []}){
     const [activeIndex, setActiveIndex] = useState(0);
@@ -7,6 +8,12 @@ export default function MonitoringSummary({coopList = []}){
 
     const activeCoop = coopList[activeIndex];
 
+    useChannelEvent(
+        activeCoop?.id ? `kandang.${activeCoop.id}` : null,
+        'monitoring.update',
+        ({ monitoring }) => setLatestData(monitoring)
+    );
+    
     // Rotasi otomatis
     useEffect(() => { // satu ngurus kapan pindah index (jalan sekali, setInterval-nya nggak perlu dibuat ulang tiap ganti kandang),
         if (coopList.length <= 1) return; // 1 kandang aja, nggak perlu rotasi.

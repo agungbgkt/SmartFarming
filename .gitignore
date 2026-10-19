@@ -1,5 +1,7 @@
 # Environment
 .env
+.env.*
+!.env.example
 
 # Dependencies
 /server/vendor/
@@ -12,6 +14,8 @@
 # Docker runtime data
 docker/mosquitto/data/
 docker/mosquitto/log/
+docker/mosquitto/config/passwd.conf
+docker/mosquitto/config/acl.conf
 
 # OS/editor files
 .DS_Store

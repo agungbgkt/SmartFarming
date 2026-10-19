@@ -28,6 +28,8 @@ class AlertController extends Controller
             $query->whereIn('type', ['high_temperature', 'low_temperature']); //whereIn('type', [...]) artinya "type-nya salah satu dari daftar ini".
         } elseif ($condition === 'humidity'){
             $query->whereIn('type', ['high_humidity', 'low_humidity']);
+        } elseif ($condition === 'offline'){
+            $query->where('type', 'device_offline');
         }
 
         if($request->filled('range')){
