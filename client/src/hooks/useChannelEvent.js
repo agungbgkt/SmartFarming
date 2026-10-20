@@ -13,7 +13,7 @@ export default function useChannelEvent(channelName, eventName, handler){
         if (!channelName) return;
 
         const pusher = getPusher();
-        if (!Pusher) return;
+        if (!pusher) return;
 
         const channel = pusher.subscribe(`private-${channelName}`);
         const listener = (data) => handleRef.current(data);
