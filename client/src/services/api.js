@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({ // bikin 1 "instance" axios dengan pengaturan default.
-    baseURL: 'http://127.0.0.1:8000/api', // bikin semua request otomatis kirim header itu.
+    baseURL: import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api', // bikin semua request otomatis kirim header itu.
     headers: {
         Accept: 'application/json',
     },
