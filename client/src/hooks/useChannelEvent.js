@@ -11,9 +11,11 @@ export default function useChannelEvent(channelName, eventName, handler){
 
     useEffect(() => {
         if (!channelName) return;
+
+        const pusher = getPusher();
         if (!Pusher) return;
 
-        const channel = getPusher().subscribe(`private-${channelName}`);
+        const channel = pusher.subscribe(`private-${channelName}`);
         const listener = (data) => handleRef.current(data);
 
         channel.bind(eventName, listener);
