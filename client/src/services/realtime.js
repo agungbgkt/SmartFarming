@@ -3,6 +3,12 @@ import Pusher from 'pusher-js';
 let pusher = null;
 
 export function getPusher(){
+    const key = import.meta.env.VITE_REVERB_APP_KEY;
+
+    if (!key || !import.meta.env.VITE_REVERB_APP_HOST){
+        return null;
+    }
+    
     if (!pusher){
         const port = Number(import.meta.env.VITE_REVERB_PORT ?? 8080);
         const apiUrl = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api';

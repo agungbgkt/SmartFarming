@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { getPusher } from "../services/realtime";
+import Pusher from "pusher-js";
 
 export default function useChannelEvent(channelName, eventName, handler){
     const handleRef = useRef(handler); // handlerRef: handler dibuat ulang di setiap render. Kalau dimasukkan ke dependency useEffect, komponen akan berlangganan ulang terus-menerus. Dengan ref, langganan cukup dibuat sekali dan tetap memanggil versi handler terbaru.
@@ -10,6 +11,7 @@ export default function useChannelEvent(channelName, eventName, handler){
 
     useEffect(() => {
         if (!channelName) return;
+        if (!Pusher) return;
 
         const channel = getPusher().subscribe(`private-${channelName}`);
         const listener = (data) => handleRef.current(data);
