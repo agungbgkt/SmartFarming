@@ -1,7 +1,7 @@
 FROM php:8.3-cli
 
 RUN apt-get update && apt-get install -y \
-    git unzip libpq-dev libzip-dev \
+    git unzip libpq-dev libzip-dev supervisor \
     && docker-php-ext-install pdo_pgsql pgsql zip pcntl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -17,6 +17,9 @@ RUN composer dump-autoload --optimize --no-dev \
     && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 10000
+# EXPOSE 10000
 
-CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+# CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+
+EXPOSE 10000
+CMD ["/start.sh"]
