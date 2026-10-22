@@ -21,3 +21,6 @@ docker/mosquitto/config/acl.conf
 .DS_Store
 .vscode/
 *.log
+
+# Firmware
+firmware/**/secrets.h 
