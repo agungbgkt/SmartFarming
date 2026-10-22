@@ -20,7 +20,9 @@ const char* MQTT_HOST = "g8df1161.ala.asia-southeast1.emqxsl.com";
 const int   MQTT_PORT = 8883;
 
 // Interval kirim data (milidetik)
-const unsigned long SEND_INTERVAL = 10000;
+const int SEND_EVERY_MIN = 15; // kirim di menit 00, 15, 30, 45
+int lastSentKey = -1; // penanda agar tidak kirim dua kali di menit yang sama
+bool firstSendDone = false; // kirim sekali saat pertama menyala
 
 // ---------- Sertifikat CA EMQX ----------
 // Ganti dengan isi file emqxsl-ca.crt (buka dengan Notepad, salin semuanya)
@@ -54,7 +56,6 @@ PubSubClient mqtt(net);
 Adafruit_AHTX0 aht;
 
 char topicPublish[64];
-unsigned long lastSend = 0;
 bool sensorOk = false;
 
 void connectWiFi() {
@@ -105,6 +106,32 @@ void connectMqtt() {
   }
 }
 
+void sendReading() {
+  if (!sensorOk) {
+    sensorOk = aht.begin(&Wire);
+    if (!sensorOk) {
+      Serial.println("AHT belum terdeteksi, dilewati");
+      return;
+    }
+  }
+
+  sensors_event_t hum, temp;
+  aht.getEvent(&hum, &temp);
+
+  if (isnan(temp.temperature) || isnan(hum.relative_humidity)) {
+    Serial.println("Pembacaan AHT tidak valid, dilewati");
+    return;
+  }
+
+  char payload[100];
+  snprintf(payload, sizeof(payload),
+           "{\"temperature\":%.1f,\"humidity\":%.1f}",
+           temp.temperature, hum.relative_humidity);
+
+  bool ok = mqtt.publish(topicPublish, payload);
+  Serial.printf("publish %s -> %s : %s\n", ok ? "OK" : "GAGAL", topicPublish, payload);
+}
+
 void setup() {
   Serial.begin(115200);
   delay(500);
@@ -133,31 +160,23 @@ void loop() {
   if (!mqtt.connected()) connectMqtt();
   mqtt.loop();
 
-  if (millis() - lastSend >= SEND_INTERVAL) {
-    lastSend = millis();
+  struct tm t;
+  if (!getLocalTime(&t, 0)) return;   // waktu belum siap
 
-    if (!sensorOk) {
-      sensorOk = aht.begin(&Wire);
-      if (!sensorOk) {
-        Serial.println("AHT belum terdeteksi, dilewati");
-        return;
-      }
-    }
-
-    sensors_event_t hum, temp;
-    aht.getEvent(&hum, &temp);
-
-    if (isnan(temp.temperature) || isnan(hum.relative_humidity)) {
-      Serial.println("Pembacaan AHT tidak valid, dilewati");
-      return;
-    }
-
-    char payload[100];
-    snprintf(payload, sizeof(payload),
-             "{\"temperature\":%.1f,\"humidity\":%.1f}",
-             temp.temperature, hum.relative_humidity);
-
-    bool ok = mqtt.publish(topicPublish, payload);
-    Serial.printf("publish %s -> %s : %s\n", ok ? "OK" : "GAGAL", topicPublish, payload);
+  // Kirim sekali saat pertama menyala (untuk cek koneksi), tanpa menunggu menit 00/15/30/45
+  if (!firstSendDone) {
+    firstSendDone = true;
+    sendReading();
   }
+
+  // Kirim di menit kelipatan 15
+  if (t.tm_min % SEND_EVERY_MIN == 0) {
+    int key = t.tm_yday * 1440 + t.tm_hour * 60 + t.tm_min;
+    if (key != lastSentKey) {
+      lastSentKey = key;
+      sendReading();
+    }
+  }
+
+  delay(200);
 }
